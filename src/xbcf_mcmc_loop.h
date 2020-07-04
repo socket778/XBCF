@@ -8,7 +8,7 @@
 #include "state.h"
 #include "cdf.h"
 #include "X_struct.h"
-#include "MH.h"
+//#include "MH.h"
 
 void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
                     const double *X_std, const double *X_tau_std,

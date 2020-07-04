@@ -4,8 +4,8 @@
 json get_forest_json(std::vector<std::vector<tree>> &trees, double y_mean)
 {
     json result;
-    result["xbart_version"] = "beta";
-    result["xbart_serialization_version"] = 0;
+    result["xbcf_version"] = "beta";
+    result["xbcf_serialization_version"] = 0;
     result["num_sweeps"] = trees.size();
     result["num_trees"] = trees[0].size();
     result["dim_theta"] = trees[0][0].theta_vector.size();
