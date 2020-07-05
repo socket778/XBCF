@@ -6,4 +6,11 @@ This package implements the Accelerated Bayesian Causal Forests approach to the 
 
 ## Installation
 
+To install the package from R console please run:
+
+```
+library(devtools)
+
+install_github("socket778/XBCF")
+```
 
