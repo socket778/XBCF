@@ -4,6 +4,9 @@
 #include <json_io.h>
 #include <model.h>
 
+// TODO: 1. find where this get_M getter is used and what for
+// 			 2. rewrite fit
+
 struct XBCFcppParams
 {
 	size_t num_sweeps;
@@ -98,7 +101,7 @@ public:
 						int n_y, double *a_y, size_t p_cat);
 
 	// Getters
-	int get_M(void); /// TODO: find where this getter is used and what for
+	int get_M(void);
 	int get_N_sweeps(void) { return ((int)params.num_sweeps); };
 	int get_burnin(void) { return ((int)params.burnin); };
 	void get_yhats(int size, double *arr);
