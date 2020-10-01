@@ -26,8 +26,8 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
                     bool a_scaling,
                     bool b_scaling)
 {
-cout << "size of Xorder std " << Xorder_std.size() << endl;
-cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
+  //cout << "size of Xorder std " << Xorder_std.size() << endl;
+  //cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   if (state->parallel)
     thread_pool.start();
 
@@ -139,7 +139,6 @@ cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
       }
     }
 
-
     // store draws for b0, b1 and a, although they are updated per tree, we save results per forest (sweep)
     b_xinfo[0][sweeps] = state->b_vec[0];
     b_xinfo[1][sweeps] = state->b_vec[1];
@@ -151,7 +150,6 @@ cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   // for(size_t kk = 0; kk < 50; kk ++ ){
   //   cout << kk << "  " << state->mu_fit[kk] << "  " << state->tau_fit[kk] << endl;
   // }
- 
 
   tree::tree_p bn;
 
@@ -160,39 +158,41 @@ cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   std::vector<double> fit_ps(50);
   std::vector<double> fit_trt(50);
 
-  for(size_t data_ind = 0; data_ind < 50; data_ind ++ ){
-    for(size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind ++ ){
+  for (size_t data_ind = 0; data_ind < 50; data_ind++)
+  {
+    for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
+    {
       fit_ps[data_ind] += (*(x_struct_ps->data_pointers[tree_ind][data_ind]))[0];
     }
   }
 
-  for(size_t data_ind = 0; data_ind < 50; data_ind ++ ){
-    for(size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind ++ ){
+  for (size_t data_ind = 0; data_ind < 50; data_ind++)
+  {
+    for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
+    {
       fit_trt[data_ind] += (*(x_struct_trt->data_pointers[tree_ind][data_ind]))[0];
     }
   }
 
-
   std::vector<double> fit_ps2(50);
   std::vector<double> fit_trt2(50);
 
-
   for (size_t i = 0; i < 50; i++)
   {
-    for(size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind ++ )
+    for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
     {
-        // loop over observations
-        // tree search
-        bn = trees_ps[state->num_sweeps - 1][tree_ind].search_bottom_std(X_std, i, state->p, state->n_y);
-        fit_ps2[i] += bn->theta_vector[0];
+      // loop over observations
+      // tree search
+      bn = trees_ps[state->num_sweeps - 1][tree_ind].search_bottom_std(X_std, i, state->p, state->n_y);
+      fit_ps2[i] += bn->theta_vector[0];
     }
 
-    for(size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind ++ )
+    for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
     {
-        // loop over observations
-        // tree search
-        bn = trees_trt[state->num_sweeps - 1][tree_ind].search_bottom_std(X_tau_std, i, state->p, state->n_y);
-        fit_trt2[i] += bn->theta_vector[0];
+      // loop over observations
+      // tree search
+      bn = trees_trt[state->num_sweeps - 1][tree_ind].search_bottom_std(X_tau_std, i, state->p, state->n_y);
+      fit_trt2[i] += bn->theta_vector[0];
     }
   }
 
@@ -202,14 +202,12 @@ cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   //   cout << kk << "  " << fit_ps[kk] << "  " << fit_trt[kk] << "  " << fit_ps2[kk] <<  "  " << fit_trt2[kk] << endl;
   // }
 
-
-
   // cout << "++++++++++++++++++++++++++" << endl;
   // cout << "print mu trees " << endl;
   // for(size_t i = 0; i < state->num_trees_vec[0]; i ++){
   //   cout << trees_ps[state->num_sweeps - 1][i] << endl;
   // }
-  
+
   thread_pool.stop();
   return;
 }

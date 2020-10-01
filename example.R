@@ -4,41 +4,51 @@ library(nnet)
 ## 1. data generation
 
 ## generate a matrix of covariates
-n = 2000
-x1 = rnorm(n)
-x2 = sample(1:2,n,replace=TRUE)
-x3 = sample(1:3,n,replace=TRUE,prob = c(0.3,0.4,0.3))
-x4 = rnorm(n)
-x5 = rnorm(n)
-x = cbind(x1,x4,x5,x2,as.factor(x3))
-
-## define prognostic function
-linear = TRUE
-mu = function(x){
-  lev = c(2,-1,-4)
-  if (linear) {result = 1 + lev[x[,5]] + x[,1]*x[,3]
-  } else {result = -6 + lev[x[,5]] + 6*abs(x[,3] - 1)}
-  return(result)
-}
-
-## generate treatment effects
-homogeneous = FALSE
-if(homogeneous) {tau = rep(3,n)
-} else {tau =  1 + 2*x[,2]*x[,4]}
-
-## define the propensity score function
-pi = 0.8*pnorm(3*mu(x)/sd(mu(x))-0.5*x[,1],0,1) + 0.05 + 0.1*runif(n)
-
-## generate treatment assignment scheme
-z = rbinom(n,1,pi)
-
-## generate response variable
-Ey = mu(x) + tau*z
-sig = 0.5*sd(Ey)
-y = Ey + sig*rnorm(n)
-
-
+# n = 500
+# x1 = rnorm(n)
+# x2 = sample(1:2,n,replace=TRUE)
+# x3 = sample(1:3,n,replace=TRUE,prob = c(0.3,0.4,0.3))
+# x4 = rnorm(n)
+# x5 = rnorm(n)
+# x = cbind(x1,x4,x5,x2,as.factor(x3))
+# 
+# ## define prognostic function
+# linear = TRUE
+# mu = function(x){
+#   lev = c(2,-1,-4)
+#   if (linear) {result = 1 + lev[x[,5]] + x[,1]*x[,3]
+#   } else {result = -6 + lev[x[,5]] + 6*abs(x[,3] - 1)}
+#   return(result)
+# }
+# 
+# ## generate treatment effects
+# homogeneous = FALSE
+# if(homogeneous) {tau = rep(3,n)
+# } else {tau =  1 + 2*x[,2]*x[,4]}
+# 
+# ## define the propensity score function
+# pi = 0.8*pnorm(3*mu(x)/sd(mu(x))-0.5*x[,1],0,1) + 0.05 + 0.1*runif(n)
+# 
+# ## generate treatment assignment scheme
+# z = rbinom(n,1,pi)
+# 
+# ## generate response variable
+# mu = mu(x)
+# Ey = mu + tau*z
+# sig = 0.5*sd(Ey)
+# y = Ey + sig*rnorm(n)
+# 
+# newdf <- cbind(y,mu,tau,z,x)
+# write.table(newdf, "newdf.csv", sep=",",  col.names=FALSE,row.names=FALSE)
 ## 2. treatment effect estimation
+
+## load data
+newdf <- read.csv(file = '~/newdf.csv', header=FALSE)
+y <- newdf[,1]
+mu <- newdf[,2]
+tau <- newdf[,3]
+z <- newdf[,4]
+x <- newdf[,5:9]
 
 ## scale response variable
 meany = mean(y)
@@ -68,6 +78,7 @@ p_cat = 2             # number of categorical regressors
 tau1 = 0.6*var(y)/treesmu   # prior leaf variance for trees for prognostic term
 tau2 = 0.1*var(y)/treestau  # prior leaf variance for trees for treatment term
 
+
 ## run xbcf
 fit_xbcf = XBCF(y, x1, x, z, num_sweeps = sweeps, burnin = burnin, 
                 max_depth = max_depth, Nmin = Nmin, num_cutpoints = num_cutpoints, no_split_penality = "Auto", 
@@ -83,6 +94,15 @@ for (kk in seq) {
 }
 tauhats_xbcf = rowMeans(th_xbcf[, (burnin + 1):sweeps])
 
+y_hats = matrix( 0L, nrow = n, ncol = sweeps)
+for (kk in seq) {
+  y_hats[, kk] = fit_xbcf$tauhats[, kk] * (b_xbcf[kk, 2] - b_xbcf[kk, 1]) + 
+    fit_xbcf$muhats[, kk] * fit_xbcf$a_draws[kk]
+}
+yh = rowMeans(y_hats[, (burnin + 1):sweeps])
+plot(y,yh)
+abline(0,1,col='red')
+rmse.cate.y = sqrt(mean((y - yh)^2))
 ## compute rmse
 rmse.cate.x = sqrt(mean((tau - tauhats_xbcf)^2))
 rmse.ate.x = sqrt(mean((mean(tau)-mean(tauhats_xbcf))^2))
