@@ -8,6 +8,8 @@ This package is based on the source code of [XBART](https://github.com/JingyuHe/
 
 ## Installation
 
+
+### R
 To install the package, run from the R console:
 
 ```
@@ -16,3 +18,6 @@ library(devtools)
 install_github("socket778/XBCF")
 ```
 
+### Python
+
+To install XBCF from PyPI use `pip install xbcausalforest`

@@ -51,4 +51,4 @@ b = fit.b.transpose()
 tauhats = sdy * obj.tauhats * (b[1] - b[0])
 tauhats_mean = np.mean(tauhats[:, (burn) : (sweeps - 1)], axis=1)
 ```
-The array tauhats mean contains individual-level treatment predictions averaged over sweeps.
+The array tauhats_mean contains individual-level treatment effect estimates averaged over sweeps.
