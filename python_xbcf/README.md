@@ -17,6 +17,9 @@ Once installed, run `./build_py.sh -s -d`
 
 ## Example
 ```{r code}
+sweeps = 40
+burn = 15
+p_categorical = #depends on your data
 model = XBCF(
     num_sweeps=sweeps,
     burnin=burn,
@@ -33,9 +36,10 @@ model = XBCF(
     parallel=True,
 )
 ```
-X and X1 are data (2darrays) used for the treatment and prognostic terms respectively
-y is the outcome variable (1darray)
-z is the binary treatment assignment (1darray)
+$X$ and $X1$ are data (2darrays) used for the treatment and prognostic terms respectively.
+For proper data processing please make sure to have categorical variables be the last columns of your data.
+$y$ is the outcome variable (1darray)
+$z$ is the binary treatment assignment (1darray)
 
 ```{r code2}
 fit = model.fit(X, X1, y, z)
