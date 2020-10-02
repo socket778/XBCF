@@ -38,8 +38,10 @@ model = XBCF(
 ```
 X and X1 are data (2darrays) used for the treatment and prognostic terms respectively.
 For proper data processing please make sure to have categorical variables be the last columns of your data.
-y is the outcome variable (1darray)
-z is the binary treatment assignment (1darray)
+
+y is the outcome variable (1darray).
+
+z is the binary treatment assignment (1darray).
 
 ```{r code2}
 fit = model.fit(X, X1, y, z)
