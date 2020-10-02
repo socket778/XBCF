@@ -19,13 +19,6 @@ def rmse(y1, y2):
     return np.sqrt(np.mean((y1 - y2) ** 2))
 
 
-def rand_bin_array(K, N):
-    arr = np.zeros(N)
-    arr[:K] = 1
-    np.random.shuffle(arr)
-    return arr
-
-
 def mu(x, lin, len):
     lev = [2, -1, -4]
     result = np.zeros(len)

@@ -3,9 +3,7 @@ from numpy.random import choice
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 import os
-import xbart
 
-# import unittest
 import sys
 import time
 from scipy.stats import norm
@@ -17,13 +15,6 @@ np.set_printoptions(threshold=sys.maxsize)
 
 def rmse(y1, y2):
     return np.sqrt(np.mean((y1 - y2) ** 2))
-
-
-def rand_bin_array(K, N):
-    arr = np.zeros(N)
-    arr[:K] = 1
-    np.random.shuffle(arr)
-    return arr
 
 
 def mu(x, lin, len):
@@ -46,60 +37,48 @@ def tau(x, h, len):
     return result
 
 
-n = 150000
+# 1. Generate the data
+n = 20000
 d = 50
 
-x = np.empty([n, d])
+X = np.empty([n, d])
 for i in range(0, d - 2):
-    x[:, i] = np.random.normal(0, 1, n)
-x[:, d - 2] = np.random.choice(2, n, p=[0.5, 0.5])
-x[:, d - 1] = np.random.choice(3, n, p=[0.3, 0.4, 0.3])
+    X[:, i] = np.random.normal(0, 1, n)
+X[:, d - 2] = np.random.choice(2, n, p=[0.5, 0.5])
+X[:, d - 1] = np.random.choice(3, n, p=[0.3, 0.4, 0.3])
 
-print(x[1, :])
 
 # options
 linear = True
-mu = mu(x, linear, n)
 homogeneous = False
-tau = tau(x, homogeneous, n)
+
+
+# generate mu and tau
+mu = mu(X, linear, n)
+tau = tau(X, homogeneous, n)
+
 
 # define the propensity score function
 pi = np.zeros(n)
 for i in range(n):
-    pi[i] = 0.8 * norm.pdf(3 * mu[i] / np.std(mu) - 0.5 * x[i, 0], 0, 1) + 0.05
+    pi[i] = 0.8 * norm.pdf(3 * mu[i] / np.std(mu) - 0.5 * X[i, 0], 0, 1) + 0.05
     +0.1 * np.random.uniform(1, 0, 1)
+
 
 # generate treatment assignment scheme
 z = np.random.binomial(1, pi, n)
 z = z.astype(np.int32)
 
+
 # generate response variable
 Ey = mu + tau * z
 sig = 0.5 * np.std(Ey)
 y = Ey + sig * np.random.normal(0, 1, n)
-"""
 
-from numpy import genfromtxt
 
-path = os.getcwd()
-fileloc = path + "/tests/newdf.csv"
-print(fileloc)
+d_t = X.shape[1]
+n = X.shape[0]
 
-my_data = genfromtxt(fileloc, delimiter=",")
-
-# print(type(my_data))
-# print(my_data[0])
-y = my_data[:, 0]
-mu = my_data[:, 1]
-tau = my_data[:, 2]
-z = my_data[:, 3]
-x = my_data[:, 4:9]
-z = z.astype(np.int32)
-"""
-d_t = x.shape[1]
-n = x.shape[0]
-# print(my_data[0])
-# print(x[0])
 
 # 2. treatment effect estimation
 
@@ -108,6 +87,8 @@ meany = np.mean(y)
 y = y - np.mean(y)
 sdy = np.std(y)
 y = y / sdy
+
+# if we don't know pi (propensity scores), we would estimate it here
 """
 from xbart import XBART
 
@@ -117,28 +98,23 @@ xbt = XBART(num_trees=100, num_sweeps=40, burnin=15)
 xb_fit = xbt.fit_predict(x, z, x)
 # xbart_yhat_matrix = xbt.predict(x_test)  # Return n X num_sweeps matrix
 # y_hat = xbart_yhat_matrix[:, 15:].mean(axis=1)  # Use mean a prediction estimate
-xb_fit = xb_fit.reshape((n, 1))
+pi = xb_fit.reshape((n, 1))
 
 end = time.time()
 print("second elapsed XBART for pihat: ", end - start)
-
-x1 = np.hstack((xb_fit, x))
 """
-# x1 = x
+
+# append propensity scores to the original data to enhance prognostic term estimation
 pi = pi.reshape((n, 1))
-x1 = np.hstack((pi, x))
-d_p = x1.shape[1]
+X1 = np.hstack((pi, X))
+d_p = X1.shape[1]
 
 # XBCF parameters
 sweeps = 40
 burn = 15
 p_cat = 2
 
-# print("d_t: ", d_t)
-# print("d_p: ", d_p)
-# print("x1 rows: ", x1.shape[0])
-
-print("fit it!")
+print("XBCF fit")
 
 model = XBCF(
     num_sweeps=sweeps,
@@ -157,33 +133,23 @@ model = XBCF(
     no_split_penality="auto",
     parallel=True,
 )
-# print(type(z[0]))
-# params = model.get_params()
-# print(params)
+
 
 start = time.time()
-obj = model.fit(x, x1, y, z, p_cat)
+obj = model.fit(X, X1, y, z)
 end = time.time()
 print("second elapsed XBCF: ", end - start)
 
-# print(type(obj.tauhats))
-# print("No. of dimensions: ", obj.tauhats.ndim)
-# print("Shape of array: ", obj.tauhats.shape)
-# print("Size of array: ", obj.tauhats.size)
-# print("sdy: ", sdy)
 b = obj.b.transpose()
 a = obj.a.transpose()
-# print(obj.tauhats[0:2, 15:39])
+
 thats = sdy * obj.tauhats * (b[1] - b[0])
 thats_mean = np.mean(thats[:, (burn) : (sweeps - 1)], axis=1)
 yhats = obj.muhats * a + obj.tauhats * (b[1] - b[0])
 yhats_mean = np.mean(yhats[:, (burn) : (sweeps - 1)], axis=1)
-# print(yhats_mean)
-# print(thats_mean)
-# print(obj.b)
-# print(obj.a)
-print(rmse(yhats_mean, y))
-print(rmse(tau, thats_mean))
+
+
+print("CATE rmse: ", rmse(tau, thats_mean))
 plt.scatter(tau, thats_mean)
 plt.xlabel("tau")
 plt.ylabel("tauhats")
