@@ -23,10 +23,12 @@ except ImportError:
 // TODO: 1. remove unnecessary functions
 //			 2. try to ignore json -- comment it out (ask Saar about it if seems like an integrtal part of the code)
 // 			 3. - rewrite __init__ function
-//			 4. review logic of the checkers and updaters (add to the list if need to rewrite)
-//			 5. rewrite __convert_params_check_types
+//			 4. - review logic of the checkers and updaters (add to the list if need to rewrite)
+//			 5. - rewrite __convert_params_check_types
 //			 6. - rewrite fit
 //           7. - fix description of XBCF object
+//           8. update object description
+//           9. return the json functions
 """
 
 
@@ -184,15 +186,16 @@ class XBCF(object):
         self.num_columns_pr = len(self.columns_pr)
 
     def __update_fit(
-        self, x_t, fit_x_t, x, fit_x, y=None, fit_y=None, z=None, fit_z=None
+        self, x_t, fit_x_t, x=None, fit_x=None, y=None, fit_y=None, z=None, fit_z=None
     ):
         """
 		Convert DataFrame to numpy
 		"""
         if isinstance(x_t, DataFrame):
             fit_x_t = x_t.values
-        if isinstance(x, DataFrame):
-            fit_x = x.values
+        if x is not None:
+            if isinstance(x, DataFrame):
+                fit_x = x.values
         if y is not None:
             if isinstance(y, Series):
                 fit_y = y.values
@@ -200,21 +203,23 @@ class XBCF(object):
             if isinstance(z, Series):
                 fit_z = z.values
 
-    def __check_input_type(self, x_t, x, y=None, z=None):
+    def __check_input_type(self, x_t, x=None, y=None, z=None):
         """
 		Dimension check
 		"""
-        if not isinstance(x, (np.ndarray, DataFrame)):
-            raise TypeError("x must be numpy array or pandas DataFrame")
-
-        if np.any(np.isnan(x)) or np.any(~np.isfinite(x)):
-            raise TypeError("Cannot have missing values!")
 
         if not isinstance(x_t, (np.ndarray, DataFrame)):
             raise TypeError("x_t must be numpy array or pandas DataFrame")
 
         if np.any(np.isnan(x_t)) or np.any(~np.isfinite(x_t)):
             raise TypeError("Cannot have missing values!")
+
+        if x is not None:
+            if not isinstance(x, (np.ndarray, DataFrame)):
+                raise TypeError("x must be numpy array or pandas DataFrame")
+
+            if np.any(np.isnan(x)) or np.any(~np.isfinite(x)):
+                raise TypeError("Cannot have missing values!")
 
         if y is not None:
             if not isinstance(y, (np.ndarray, Series)):
@@ -231,7 +236,7 @@ class XBCF(object):
         # ), "z must be a positive integer"
 
     def __check_test_shape(self, x):
-        assert x.shape[1] == self.num_columns, "Mismatch on number of columns"
+        assert x.shape[1] == self.num_columns_trt, "Mismatch on number of columns"
 
     def __check_params(self, p_cat):
         assert p_cat <= self.num_columns_pr, "p_cat must be <= number of columns"
@@ -427,6 +432,37 @@ class XBCF(object):
 
         self.is_fit = True
         return self
+
+    def predict(self, x_test, return_mean=True):
+
+        assert self.is_fit, "Must run fit before running predict"
+
+        # Check inputs #
+
+        self.__check_input_type(x_test)
+        pred_x = x_test.copy()
+        self.__check_test_shape(pred_x)
+        self.__update_fit(x_test, pred_x)  # unnecessary in general?
+
+        # Run Predict
+        self._xbcf_cpp._predict(pred_x)
+        # Convert to numpy
+        tauhats_test = self._xbcf_cpp.get_tauhats_test(
+            self.params["num_sweeps"] * pred_x.shape[0]
+        )
+
+        # Convert from colum major
+        self.tauhats_test = tauhats_test.reshape(
+            (pred_x.shape[0], self.params["num_sweeps"]), order="C"
+        )
+        # Compute mean
+        # get bs and compute mean here?
+        # self.yhats_mean =  self.yhats_test[:,self.params["burnin"]:].mean(axis=1)
+
+        # if return_mean:
+        # 	return self.yhats_mean
+        # else:
+        return self.tauhats_test
 
     def get_params(self):
         return self.params

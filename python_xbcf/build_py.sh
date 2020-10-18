@@ -52,10 +52,10 @@ if $SWIG_FLAG;then
 
   if [ "$ver" -le "27" ]; then
       echo "Running script with python $ver"
-      swig -c++ -python xbcf/xbcf.i
+      swig -c++ -python xbcausalforest/xbcf.i
   else
     echo "Running script with python $ver"
-    swig -c++ -python -py3  xbcf/xbcf.i
+    swig -c++ -python -py3  xbcausalforest/xbcf.i
   fi
 fi
 

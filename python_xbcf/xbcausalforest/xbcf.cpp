@@ -391,9 +391,34 @@ void XBCFcpp::_fit(int n_t, int d_t, double *a_t, // treatment
   //cout << "END" << endl;
 }
 
-//// >>>>>>>>>>>
-// WE ARE HERE NOW
-/// <<<<<<<<<<<<<<
+void XBCFcpp::_predict(int n_t, int d_t, double *a_t)
+{ //,int size, double *arr){
+
+  // Convert *a to col_major std::vector
+  vec_d x_test_std_flat(n_t * d_t);
+  XBCFcpp::np_to_col_major_vec(n_t, d_t, a_t, x_test_std_flat);
+
+  // Initialize result
+  ini_matrix(this->tauhats_test_xinfo, n_t, this->params.num_sweeps);
+  for (size_t i = 0; i < n_t; i++)
+    for (size_t j = 0; j < this->params.num_sweeps; j++)
+      this->tauhats_test_xinfo[j][i] = 0;
+  // Convert column major vector to pointer
+
+  const double *Xtestpointer = &x_test_std_flat[0]; //&x_test_std[0][0];
+
+  // Predict
+  //NormalModel *model = new NormalModel(); //(this->params.kap, this->params.s, this->params.tau, this->params.alpha, this->params.beta);
+
+  xbcfModel *model = new xbcfModel(this->params.kap_trt, this->params.s_trt, this->params.tau_trt, this->params.alpha_trt, this->params.beta_trt);
+
+  model->predict_std(Xtestpointer, n_t, d_t, this->params.num_trees_trt,
+                     this->params.num_sweeps, this->tauhats_test_xinfo, this->trees_trt);
+  //model->predict_std(Xtestpointer, n, d, this->params.M, this->params.N_sweeps,
+  //                   this->yhats_test_xinfo, this->trees);
+
+  delete model;
+}
 
 // Getters
 void XBCFcpp::get_muhats(int size, double *arr)
@@ -404,6 +429,11 @@ void XBCFcpp::get_muhats(int size, double *arr)
 void XBCFcpp::get_tauhats(int size, double *arr)
 {
   xinfo_to_np(this->tauhats_xinfo, arr);
+}
+
+void XBCFcpp::get_tauhats_test(int size, double *arr)
+{
+  xinfo_to_np(this->tauhats_test_xinfo, arr);
 }
 
 void XBCFcpp::get_b(int size, double *arr)

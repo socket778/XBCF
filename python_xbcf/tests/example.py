@@ -159,6 +159,8 @@ obj = model.fit(x, x1, y, z, p_cat)
 end = time.time()
 print("second elapsed XBCF: ", end - start)
 
+test = model.predict(x)
+
 # print(type(obj.tauhats))
 # print("No. of dimensions: ", obj.tauhats.ndim)
 # print("Shape of array: ", obj.tauhats.shape)
@@ -169,6 +171,15 @@ a = obj.a.transpose()
 # print(obj.tauhats[0:2, 15:39])
 thats = sdy * obj.tauhats * (b[1] - b[0])
 thats_mean = np.mean(thats[:, (burn) : (sweeps - 1)], axis=1)
+
+thats_test = sdy * test * (b[1] - b[0])
+thats_test_mean = np.mean(thats_test[:, (burn) : (sweeps - 1)], axis=1)
+print(rmse(thats_test_mean, thats_mean))
+plt.scatter(thats_test_mean, thats_mean)
+plt.xlabel("tauhats_test")
+plt.ylabel("tauhats")
+plt.show()
+"""
 yhats = obj.muhats * a + obj.tauhats * (b[1] - b[0])
 yhats_mean = np.mean(yhats[:, (burn) : (sweeps - 1)], axis=1)
 # print(yhats_mean)
@@ -181,4 +192,4 @@ plt.scatter(tau, thats_mean)
 plt.xlabel("tau")
 plt.ylabel("tauhats")
 plt.show()
-
+"""

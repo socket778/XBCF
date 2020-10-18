@@ -1,5 +1,6 @@
 library(XBCF)
 library(nnet)
+library(bcf)
 
 ## 1. data generation
 
@@ -44,11 +45,15 @@ library(nnet)
 
 ## load data
 newdf <- read.csv(file = '~/newdf.csv', header=FALSE)
+n <- nrow(newdf)
+
 y <- newdf[,1]
 mu <- newdf[,2]
 tau <- newdf[,3]
 z <- newdf[,4]
-x <- newdf[,5:9]
+x <- as.matrix(newdf[,c(5,6,7,8,9)])
+
+
 
 ## scale response variable
 meany = mean(y)
@@ -75,15 +80,18 @@ mtry_pr = ncol(x1)    # number of variables considered at each split in trees fo
 mtry_trt = ncol(x)    # number of variables considered at each split in trees for treatment term
 p_cat = 2             # number of categorical regressors
 
-tau1 = 0.6*var(y)/treesmu   # prior leaf variance for trees for prognostic term
-tau2 = 0.1*var(y)/treestau  # prior leaf variance for trees for treatment term
+tau1 = 10*var(y)/treesmu   # prior leaf variance for trees for prognostic term
+tau2 = 1*var(y)/treestau  # prior leaf variance for trees for treatment term
 
 
 ## run xbcf
+seed = 2009
 fit_xbcf = XBCF(y, x1, x, z, num_sweeps = sweeps, burnin = burnin, 
                 max_depth = max_depth, Nmin = Nmin, num_cutpoints = num_cutpoints, no_split_penality = "Auto", 
                 mtry_pr = mtry_pr, mtry_trt = mtry_trt, p_categorical_pr = p_cat, p_categorical_trt = p_cat, 
-                num_trees_pr = treesmu,  tau_pr = tau1, num_trees_trt = treestau, tau_trt = tau2)
+                num_trees_pr = treesmu, alpha_pr = 0.95, beta_pr = 1.25, tau_pr = tau1, 
+                num_trees_trt = treestau, alpha_trt = 0.25, beta_trt = 3, tau_trt = tau2, 
+                a_scaling = TRUE, b_scaling = TRUE, random_seed = seed)
 
 ## obtain the treatment effect estimates from the fit
 th_xbcf = fit_xbcf$tauhats * sdy
@@ -93,6 +101,35 @@ for (kk in seq) {
   th_xbcf[, kk] = th_xbcf[, kk] * (b_xbcf[kk, 2] - b_xbcf[kk, 1])
 }
 tauhats_xbcf = rowMeans(th_xbcf[, (burnin + 1):sweeps])
+
+
+## plot the estimates
+plot(tau,tauhats_xbcf)
+abline(0,1,col='red')
+
+
+### try bcf with defaults
+
+
+fit_bcf = bcf(y, z, x, x, pihat, nburn=4000, nsim=4000, 
+              include_pi = 'control', use_tauscale = TRUE, use_muscale = TRUE, 
+              ntree_control = treesmu, ntree_moderate = treestau, power_moderate = 3, n_chains = 1)
+
+bcf_tau = fit_bcf$tau * sdy
+tauhats_bcf = colMeans(bcf_tau)
+
+
+# plot
+plot(tau,tauhats_bcf)
+abline(0,1,col='red')
+
+# plot
+plot(tauhats_bcf,tauhats_xbcf)
+abline(0,1,col='red')
+
+
+
+### EXTRA
 
 y_hats = matrix( 0L, nrow = n, ncol = sweeps)
 for (kk in seq) {
@@ -108,7 +145,3 @@ rmse.cate.x = sqrt(mean((tau - tauhats_xbcf)^2))
 rmse.ate.x = sqrt(mean((mean(tau)-mean(tauhats_xbcf))^2))
 rmse.cate.x
 rmse.ate.x
-
-## plot the estimates
-plot(tau,tauhats_xbcf)
-abline(0,1,col='red')

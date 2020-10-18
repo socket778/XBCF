@@ -5922,6 +5922,57 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_XBCFcpp__predict(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  XBCFcpp *arg1 = (XBCFcpp *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  double *arg4 = (double *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyArrayObject *array2 = NULL ;
+  int is_new_object2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp__predict", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_XBCFcpp, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "XBCFcpp__predict" "', argument " "1"" of type '" "XBCFcpp *""'"); 
+  }
+  arg1 = reinterpret_cast< XBCFcpp * >(argp1);
+  {
+    npy_intp size[2] = {
+      -1, -1 
+    };
+    array2 = obj_to_array_contiguous_allow_conversion(swig_obj[1],
+      NPY_DOUBLE,
+      &is_new_object2);
+    if (!array2 || !require_dimensions(array2, 2) ||
+      !require_size(array2, size, 2)) SWIG_fail;
+    arg2 = (int) array_size(array2,0);
+    arg3 = (int) array_size(array2,1);
+    arg4 = (double*) array_data(array2);
+  }
+  (arg1)->_predict(arg2,arg3,arg4);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object2 && array2)
+    {
+      Py_DECREF(array2); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object2 && array2)
+    {
+      Py_DECREF(array2); 
+    }
+  }
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_XBCFcpp_get_muhats(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   XBCFcpp *arg1 = (XBCFcpp *) 0 ;
@@ -5998,6 +6049,49 @@ SWIGINTERN PyObject *_wrap_XBCFcpp_get_tauhats(PyObject *SWIGUNUSEDPARM(self), P
     arg3 = (double*) array_data(array2);
   }
   (arg1)->get_tauhats(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  {
+    resultobj = SWIG_Python_AppendOutput(resultobj,(PyObject*)array2);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_XBCFcpp_get_tauhats_test(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  XBCFcpp *arg1 = (XBCFcpp *) 0 ;
+  int arg2 ;
+  double *arg3 = (double *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *array2 = NULL ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp_get_tauhats_test", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_XBCFcpp, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "XBCFcpp_get_tauhats_test" "', argument " "1"" of type '" "XBCFcpp *""'"); 
+  }
+  arg1 = reinterpret_cast< XBCFcpp * >(argp1);
+  {
+    npy_intp dims[1];
+    if (!PyInt_Check(swig_obj[1]))
+    {
+      const char* typestring = pytype_string(swig_obj[1]);
+      PyErr_Format(PyExc_TypeError,
+        "Int dimension expected.  '%s' given.",
+        typestring);
+      SWIG_fail;
+    }
+    arg2 = (int) PyInt_AsLong(swig_obj[1]);
+    dims[0] = (npy_intp) arg2;
+    array2 = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    if (!array2) SWIG_fail;
+    arg3 = (double*) array_data(array2);
+  }
+  (arg1)->get_tauhats_test(arg2,arg3);
   resultobj = SWIG_Py_Void();
   {
     resultobj = SWIG_Python_AppendOutput(resultobj,(PyObject*)array2);
@@ -6197,8 +6291,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "XBCFcppParams_swiginit", XBCFcppParams_swiginit, METH_VARARGS, NULL},
 	 { "new_XBCFcpp", _wrap_new_XBCFcpp, METH_VARARGS, NULL},
 	 { "XBCFcpp__fit", _wrap_XBCFcpp__fit, METH_VARARGS, NULL},
+	 { "XBCFcpp__predict", _wrap_XBCFcpp__predict, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_muhats", _wrap_XBCFcpp_get_muhats, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_tauhats", _wrap_XBCFcpp_get_tauhats, METH_VARARGS, NULL},
+	 { "XBCFcpp_get_tauhats_test", _wrap_XBCFcpp_get_tauhats_test, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_b", _wrap_XBCFcpp_get_b, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_a", _wrap_XBCFcpp_get_a, METH_VARARGS, NULL},
 	 { "delete_XBCFcpp", _wrap_delete_XBCFcpp, METH_O, NULL},
