@@ -430,6 +430,8 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
     // Rcpp::NumericMatrix b1_draws(num_trees_trt, num_sweeps);
     Rcpp::NumericMatrix b_draws(num_sweeps, 2);
     Rcpp::NumericMatrix a_draws(num_sweeps, 1);
+    Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt_pr(trees_pr, true);
+    Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt_trt(trees_trt, true);
 
     std_to_rcpp(tauhats_xinfo, tauhats);
     std_to_rcpp(muhats_xinfo, muhats);
@@ -502,6 +504,9 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
         // Rcpp::Named("b1_draws") = b1_draws,
         Rcpp::Named("b_draws") = b_draws,
         Rcpp::Named("a_draws") = a_draws,
+        Rcpp::Named("model_list") = Rcpp::List::create(Rcpp::Named("tree_pnt_pr") = tree_pnt_pr,
+                                                       Rcpp::Named("tree_pnt_trt") = tree_pnt_trt,
+                                                       Rcpp::Named("y_mean") = y_mean),
         Rcpp::Named("treedraws_pr") = output_tree_pr,
         Rcpp::Named("treedraws_trt") = output_tree_trt
 
