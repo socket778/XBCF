@@ -40,6 +40,18 @@ XBCF <- function(y, X, X_tau, z,
         y = as.matrix(y)
     }
 
+    meany = mean(y)
+    y = y - meany
+    sdy = sd(y)
+    cat("sdy: ", sdy, "\n")
+    if(sdy != 1) {
+        y = y / sdy
+        sdy_use = TRUE
+    } else {
+        sdy_use = FALSE
+    }
+    cat("sdy_use: ", sdy_use, "\n")
+
     if(is.null(random_seed)){
         set_random_seed = FALSE
         random_seed = 0;
@@ -75,5 +87,21 @@ XBCF <- function(y, X, X_tau, z,
                          random_seed, sample_weights_flag,
                          a_scaling, b_scaling)
     class(obj) = "XBCF"
+
+    obj$sdy_use = sdy_use
+    obj$sdy = sdy
+    obj$meany = meany
+    if(sdy_use == TRUE) {
+        obj$tauhats = obj$tauhats * sdy
+        obj$muhats = obj$muhats * sdy
+    }
+
+    obj$tauhats.adjusted <- matrix(NA, length(y), sweeps-burnin)
+    obj$muhats.adjusted <- matrix(NA, length(y), sweeps-burnin)
+    seq <- (burnin+1):sweeps
+    for (i in seq) {
+        obj$tauhats.adjusted[, i - burnin] = obj$tauhats[,i] * (obj$b_draws[i,2] - obj$b_draws[i,1])
+        obj$muhats.adjusted[, i - burnin] = obj$muhats[,i] * (obj$a_draws[i]) + meany
+    }
     return(obj)
 }

@@ -508,7 +508,12 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
                                                        Rcpp::Named("tree_pnt_trt") = tree_pnt_trt,
                                                        Rcpp::Named("y_mean") = y_mean),
         Rcpp::Named("treedraws_pr") = output_tree_pr,
-        Rcpp::Named("treedraws_trt") = output_tree_trt
+        Rcpp::Named("treedraws_trt") = output_tree_trt,
+        Rcpp::Named("sdy_use") = NULL,
+        Rcpp::Named("sdy") = NULL,
+        Rcpp::Named("meany") = NULL,
+        Rcpp::Named("tauhats.adjusted") = NULL,
+        Rcpp::Named("muhats.adjusted") = NULL
 
     );
 }

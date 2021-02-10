@@ -101,13 +101,13 @@ void xbcfModel::update_state(std::unique_ptr<State> &state, size_t tree_ind, std
     {
       // full_residual_trt.push_back((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
       state->full_residual_trt[index_trt] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i];
-      index_trt ++ ;
+      index_trt++;
     }
     else
     {
       // full_residual_ctrl.push_back((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
       state->full_residual_ctrl[index_ctrl] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i];
-      index_ctrl ++ ;
+      index_ctrl++;
     }
   }
 
@@ -119,8 +119,6 @@ void xbcfModel::update_state(std::unique_ptr<State> &state, size_t tree_ind, std
   // for(size_t i = 0; i < full_residual_ctrl.size(); i ++ ){
   //   cout << "compare ctrl " << full_residual_ctrl[i] << " " << state->full_residual_ctrl[i] << endl;
   // }
-
-
 
   // compute sigma1 for the treated group
   std::gamma_distribution<double> gamma_samp1((state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_trt) + s));
@@ -315,13 +313,13 @@ void xbcfModel::update_a_value(std::unique_ptr<State> &state)
     {
       // residual.push_back((*state->y_std)[i] - state->tau_fit[i] * state->b_vec[1]);
       state->residual[i] = (*state->y_std)[i] - state->tau_fit[i] * state->b_vec[1];
-      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl; 
+      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl;
     }
     else
     {
       // residual.push_back((*state->y_std)[i] - state->tau_fit[i] * state->b_vec[0]);
       state->residual[i] = (*state->y_std)[i] - state->tau_fit[i] * state->b_vec[0];
-      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl; 
+      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl;
     }
   }
 
@@ -340,7 +338,7 @@ void xbcfModel::update_a_value(std::unique_ptr<State> &state)
   }
 
   // step 1 (control group)
-  double v0 = 1 / (2 + mu2sum_ctrl / pow(state->sigma_vec[0], 2));
+  double v0 = 1 / (1.0 + mu2sum_ctrl / pow(state->sigma_vec[0], 2));
   double m0 = v0 * (muressum_ctrl) / pow(state->sigma_vec[0], 2);
 
   // step 2 (treatment group)
