@@ -385,6 +385,17 @@ class XBCF(object):
         self.__update_mtry_tau_penality(fit_x_t, fit_x)
         # self.__check_params(p_cat)
 
+        # Standardize target variable
+        self.meany_ = np.mean(fit_y)
+        self.sdy_ = np.std(fit_y)
+
+        if self.sdy == 0:
+            ValueError("Target variable is constant with variance 0.")
+        elif self.sdy == 1:
+            self.sdy_ = (fit_y - self.meany_)
+        else:
+            self.sdy_ = (fit_y - self.meany_)/self.sdy_
+
         # Create xbart_cpp object #
         if self._xbcf_cpp is None:
             # self.args = self.__convert_params_check_types(**self.params)
@@ -416,6 +427,11 @@ class XBCF(object):
         )
         self.b = b.reshape((self.params["num_sweeps"]), 2, order="C")
         self.a = a.reshape((self.params["num_sweeps"]), 1, order="C")
+
+        # Unstandardize
+        if self.sd_y != 1:
+            self.muhats = self.muhats * self.sdy_
+            self.tauhats = self.tauhats * self.sdy_
 
         # Additionaly Members
         # self.importance = self._xbart_cpp._get_importance(fit_x.shape[1])
@@ -455,6 +471,14 @@ class XBCF(object):
         self.tauhats_test = tauhats_test.reshape(
             (pred_x.shape[0], self.params["num_sweeps"]), order="C"
         )
+
+        # Unstandardize prediction
+        b = self.b.transpose()
+        a = self.a.transpose()
+
+        thats = self.tauhats_test * (b[1] - b[0])
+        thats_mean = np.mean(thats[:, self.params['burnin']:], axis=1)
+        
         # Compute mean
         # get bs and compute mean here?
         # self.yhats_mean =  self.yhats_test[:,self.params["burnin"]:].mean(axis=1)
@@ -462,7 +486,7 @@ class XBCF(object):
         # if return_mean:
         # 	return self.yhats_mean
         # else:
-        return self.tauhats_test
+        return thats_mean
 
     def get_params(self):
         return self.params
