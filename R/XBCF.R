@@ -43,14 +43,12 @@ XBCF <- function(y, X, X_tau, z,
     meany = mean(y)
     y = y - meany
     sdy = sd(y)
-    cat("sdy: ", sdy, "\n")
-    if(sdy != 1) {
-        y = y / sdy
-        sdy_use = TRUE
+
+    if(sdy == 0) {
+        stop('y is a constant variable; sdy = 0')
     } else {
-        sdy_use = FALSE
+        y = y / sdy
     }
-    cat("sdy_use: ", sdy_use, "\n")
 
     if(is.null(random_seed)){
         set_random_seed = FALSE
@@ -88,13 +86,11 @@ XBCF <- function(y, X, X_tau, z,
                          a_scaling, b_scaling)
     class(obj) = "XBCF"
 
-    obj$sdy_use = sdy_use
+    #obj$sdy_use = sdy_use
     obj$sdy = sdy
     obj$meany = meany
-    if(sdy_use == TRUE) {
-        obj$tauhats = obj$tauhats * sdy
-        obj$muhats = obj$muhats * sdy
-    }
+    obj$tauhats = obj$tauhats * sdy
+    obj$muhats = obj$muhats * sdy
 
     obj$tauhats.adjusted <- matrix(NA, length(y), sweeps-burnin)
     obj$muhats.adjusted <- matrix(NA, length(y), sweeps-burnin)
