@@ -153,7 +153,7 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
 
   tree::tree_p bn;
 
-  cout << "number of trees " << state->num_trees_vec[0] << endl;
+  // cout << "number of trees " << state->num_trees_vec[0] << endl;
 
   std::vector<double> fit_ps(50);
   std::vector<double> fit_trt(50);

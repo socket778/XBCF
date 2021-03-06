@@ -510,7 +510,21 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
         Rcpp::Named("sdy") = NULL,
         Rcpp::Named("meany") = NULL,
         Rcpp::Named("tauhats.adjusted") = NULL,
-        Rcpp::Named("muhats.adjusted") = NULL
-
+        Rcpp::Named("muhats.adjusted") = NULL,
+        Rcpp::Named("model_params") = Rcpp::List::create(Rcpp::Named("num_sweeps") = num_sweeps,
+                                                         Rcpp::Named("burnin") = burnin,
+                                                         Rcpp::Named("max_depth") = max_depth,
+                                                         Rcpp::Named("Nmin") = n_min,
+                                                         Rcpp::Named("num_cutpoints") = num_cutpoints,
+                                                         Rcpp::Named("alpha_pr") = alpha_pr,
+                                                         Rcpp::Named("beta_pr") = beta_pr,
+                                                         Rcpp::Named("tau_pr") = tau_pr,
+                                                         Rcpp::Named("p_categorical_pr") = p_categorical_pr,
+                                                         Rcpp::Named("num_trees_pr") = num_trees_pr,
+                                                         Rcpp::Named("alpha_trt") = alpha_trt,
+                                                         Rcpp::Named("beta_trt") = beta_trt,
+                                                         Rcpp::Named("tau_trt") = tau_trt,
+                                                         Rcpp::Named("p_categorical_trt") = p_categorical_trt,
+                                                         Rcpp::Named("num_trees_trt") = num_trees_trt)
     );
 }
