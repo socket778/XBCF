@@ -120,6 +120,7 @@ class XBCF(object):
         sample_weights_flag: bool = True,
         a_scaling: bool = True,
         b_scaling: bool = True,
+        standardize_target = True,
     ):
         assert num_sweeps > burnin, "num_sweep must be greater than burnin"
         self.params = OrderedDict(
@@ -164,6 +165,7 @@ class XBCF(object):
         # self.importance = None
         self.sigma_draws = None
         self.is_fit = False
+        self.standardize_target=standardize_target
 
     def __repr__(self):
         items = ("%s = %r" % (k, v) for k, v in self.params.items())
@@ -385,6 +387,17 @@ class XBCF(object):
         self.__update_mtry_tau_penality(fit_x_t, fit_x)
         # self.__check_params(p_cat)
 
+        # Standardize target variable
+        if self.standardize_target:
+            self.meany_ = np.mean(fit_y)
+            self.sdy_ = np.std(fit_y)
+            if self.sdy_ == 0:
+                ValueError("Target variable is constant with variance 0.")
+            #elif self.sdy_ == 1:
+            #    fit_y = (fit_y - self.meany_)
+            else:
+                fit_y = (fit_y - self.meany_)/self.sdy_
+
         # Create xbart_cpp object #
         if self._xbcf_cpp is None:
             # self.args = self.__convert_params_check_types(**self.params)
@@ -417,6 +430,14 @@ class XBCF(object):
         self.b = b.reshape((self.params["num_sweeps"]), 2, order="C")
         self.a = a.reshape((self.params["num_sweeps"]), 1, order="C")
 
+        # Unstandardize
+        if self.standardize_target:
+            a = self.a.transpose()
+            b = self.b.transpose()
+
+            self.muhats_adjusted = (self.muhats * self.sdy_ * a) + self.meany_
+            self.tauhats_adjusted = self.tauhats * self.sdy_ * (b[1] - b[0])
+
         # Additionaly Members
         # self.importance = self._xbart_cpp._get_importance(fit_x.shape[1])
         # self.importance = dict(zip(self.columns, self.importance.astype(int)))
@@ -433,16 +454,32 @@ class XBCF(object):
         self.is_fit = True
         return self
 
-    def predict(self, x_test, return_mean=True):
+    def predict(self, X, return_mean=True, return_muhat=False):
+        """Estimate tau for data X
+
+        Parameters
+        ----------
+		x : DataFrame or numpy array
+            Feature matrix (predictors)
+        return_mean : bool
+            Return mean of samples excluding burn-in as point estimate, default: True
+        return_muhat : bool 
+            Also return mu hat, the estimated outcome without the treatment effect, default: False
+
+        Returns
+        -------
+        array or list of two arrays (if return_muhat=True)
+            Estimated tau or estimated tau and estimated mu (of return_muhat=True)
+        """
 
         assert self.is_fit, "Must run fit before running predict"
 
         # Check inputs #
 
-        self.__check_input_type(x_test)
-        pred_x = x_test.copy()
+        self.__check_input_type(X)
+        pred_x = X.copy()
         self.__check_test_shape(pred_x)
-        self.__update_fit(x_test, pred_x)  # unnecessary in general?
+        self.__update_fit(X, pred_x)  # unnecessary in general?
 
         # Run Predict
         self._xbcf_cpp._predict(pred_x)
@@ -452,17 +489,41 @@ class XBCF(object):
         )
 
         # Convert from colum major
-        self.tauhats_test = tauhats_test.reshape(
+        tauhats_test = tauhats_test.reshape(
             (pred_x.shape[0], self.params["num_sweeps"]), order="C"
         )
-        # Compute mean
-        # get bs and compute mean here?
-        # self.yhats_mean =  self.yhats_test[:,self.params["burnin"]:].mean(axis=1)
+    
+        b = self.b.transpose()
+        thats =  tauhats_test* (b[1] - b[0])
 
-        # if return_mean:
-        # 	return self.yhats_mean
-        # else:
-        return self.tauhats_test
+        # Unstandardize prediction
+        if self.standardize_target:
+            thats = self.sdy_ * thats
+
+        # Point-estimate from samples
+        if return_mean:
+            thats = np.mean(thats[:, self.params['burnin']:], axis=1)
+        
+        if return_muhat is False: # Return only treatment estimate
+            return thats
+        else: # also calculate and return estimate for mu
+            # Convert to numpy
+            muhats = self._xbcf_cpp.get_muhats(self.params["num_sweeps"] * pred_x.shape[0])
+            # Convert from colum major
+            muhats = muhats.reshape(
+                (pred_x.shape[0], self.params["num_sweeps"]), order="C"
+            )
+            a = self.a.transpose()
+
+            muhats = muhats * a
+            if self.standardize_target:
+                muhats = (muhats * self.sdy_) + self.meany_
+
+            if return_mean:
+                muhats = np.mean(muhats[:, self.params['burnin']:], axis=1)
+
+            return thats, muhats
+
 
     def get_params(self):
         return self.params
