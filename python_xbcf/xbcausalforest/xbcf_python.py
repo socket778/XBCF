@@ -361,14 +361,18 @@ class XBCF(object):
 
     def fit(self, x_t, x, y, z, p_cat=0):
         """
-		Fit XBART model
+		Fit XBCF model
         Parameters
         ----------
-		x : DataFrame or numpy array
-            Feature matrix (predictors)
+		x_t : DataFrame or numpy array
+            Feature matrix (predictors), treatment term
+        x : DataFrame or numpy array
+            Feature matrix (predictors), prognostic term
         y : array_like
             Target (response)
-		p_cat: int
+        z : array_like (binary)
+            Treatment assignment
+		p_cat: int # move this to params
 			Number of features to treat as categorical for cutpoint options. More efficient.
 			To use this feature set place the categorical features as the last p_cat columns of x
 		"""
@@ -398,7 +402,7 @@ class XBCF(object):
             else:
                 fit_y = (fit_y - self.meany_)/self.sdy_
 
-        # Create xbart_cpp object #
+        # Create xbcf_cpp object #
         if self._xbcf_cpp is None:
             # self.args = self.__convert_params_check_types(**self.params)
             args = list(self.params.values())
@@ -435,8 +439,11 @@ class XBCF(object):
             a = self.a.transpose()
             b = self.b.transpose()
 
-            self.muhats_adjusted = (self.muhats * self.sdy_ * a) + self.meany_
-            self.tauhats_adjusted = self.tauhats * self.sdy_ * (b[1] - b[0])
+            self.tauhats = self.sdy_ * self.tauhats
+            self.muhats = self.sdy_ * self.muhats
+
+            self.muhats_adjusted = (self.muhats * a) + self.meany_
+            self.tauhats_adjusted = self.tauhats * (b[1] - b[0])
 
         # Additionaly Members
         # self.importance = self._xbart_cpp._get_importance(fit_x.shape[1])
@@ -463,7 +470,7 @@ class XBCF(object):
             Feature matrix (predictors)
         return_mean : bool
             Return mean of samples excluding burn-in as point estimate, default: True
-        return_muhat : bool 
+        return_muhat : bool
             Also return mu hat, the estimated outcome without the treatment effect, default: False
 
         Returns
@@ -492,7 +499,7 @@ class XBCF(object):
         tauhats_test = tauhats_test.reshape(
             (pred_x.shape[0], self.params["num_sweeps"]), order="C"
         )
-    
+
         b = self.b.transpose()
         thats =  tauhats_test* (b[1] - b[0])
 
@@ -503,7 +510,7 @@ class XBCF(object):
         # Point-estimate from samples
         if return_mean:
             thats = np.mean(thats[:, self.params['burnin']:], axis=1)
-        
+
         if return_muhat is False: # Return only treatment estimate
             return thats
         else: # also calculate and return estimate for mu
@@ -525,5 +532,9 @@ class XBCF(object):
             return thats, muhats
 
 
-    def get_params(self):
+    def getParams(self):
         return self.params
+
+    def getTau(self):
+        tauhats = np.mean(self.tauhats_adjusted[:, self.params["burnin"]:], axis=1)
+        return tauhats

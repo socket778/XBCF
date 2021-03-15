@@ -36,13 +36,7 @@ d_t = X.shape[1]
 n = X.shape[0]
 
 
-# 2. treatment effect estimation
-
-# scale response variable
-meany = np.mean(y)
-y = y - np.mean(y)
-sdy = np.std(y)
-y = y / sdy
+# 2. Treatment effect estimation
 
 # fit propensity scores using XBART
 start = time.time()
@@ -102,34 +96,30 @@ model = XBCF(
 start = time.time()
 obj_train = model.fit(X_train, X1_train, y_train, z_train)
 end = time.time()
-print("second elapsed XBCF: ", end - start)
+print("seconds elapsed XBCF: ", end - start)
 
-b = obj_train.b.transpose()
-a = obj_train.a.transpose()
-
-# In-sample fit
-thats = sdy * obj_train.tauhats * (b[1] - b[0])
-thats_mean = np.mean(thats[:, (burn) : (sweeps - 1)], axis=1)
+# get point estimates
+tauhats = model.getTau()
 
 
-print("CATE rmse train: ", rmse(tau_train, thats_mean))
-plt.scatter(tau_train, thats_mean)
+print("CATE rmse train: ", rmse(tau_train, tauhats))
+
+plt.scatter(tau_train, tauhats)
 plt.xlabel("tau")
-plt.ylabel("tauhats")
+plt.ylabel("tauhat")
 plt.show()
 
-# Out-of-sample fit
+
+# 3. Out-of-sample fit (prediction)
 print("==== OOS fit example ====")
 
+# get predicted point estimates
 tauhats_test = model.predict(X_test)
 
-thats_test = sdy * tauhats_test * (b[1] - b[0])
-thats_test_mean = np.mean(thats_test[:, (burn) : (sweeps - 1)], axis=1)
 
-
-print("CATE rmse test: ", rmse(tau_test, thats_test_mean))
-plt.scatter(tau_test, thats_test_mean)
+print("CATE rmse test: ", rmse(tau_test, tauhats_test))
+plt.scatter(tau_test, tauhats_test)
 plt.xlabel("tau_test")
-plt.ylabel("tauhats_test")
+plt.ylabel("tauhat_test")
 plt.show()
 
