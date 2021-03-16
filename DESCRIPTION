@@ -7,6 +7,8 @@ Author: Jingyu He, Saar Yalov, P. Richard Hahn, Lee Reeves, Nikolay Krantsevich
 Maintainer: Nikolay Krantsevich <krantsevich@asu.edu>
 Description: Conditional average treatment effect estimation with a tree-based method providing separate regularization for the treatment and prognostic terms.
 License: Apache License (== 2.0)
-Imports: Rcpp (>= 0.12.13)
+Imports: Rcpp (>= 0.12.13), bcf2, XBART, doParallel
+Remotes: github::JingyuHe/bcf2, github::JingyuHe/XBART
 LinkingTo: Rcpp, RcppArmadillo
 NeedsCompilation: yes
+RoxygenNote: 7.1.1
