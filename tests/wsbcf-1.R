@@ -1,74 +1,88 @@
 # simple demonstration of XBCF with default parameters
-library(wsBCF)
+library(XBCF)
 library(dbarts)
 
-#### 1. DATA GENERATION PROCESS
+#### 1. DGP
 n = 500 # number of observations
 # set seed here
 # set.seed(1)
 
-# generate dcovariates
+# generate covariates
 x1 = rnorm(n)
-x2 = rbinom(n,1,0.2)
-x3 = sample(1:3,n,replace=TRUE,prob = c(0.1,0.6,0.3))
+x2 = sample(1:2,n,replace=TRUE)
+x3 = sample(1:3,n,replace=TRUE,prob = c(0.3,0.4,0.3))
 x4 = rnorm(n)
-x5 = rbinom(n,1,0.7)
-x = cbind(x1,x2,x3,x4,x5)
+x5 = rnorm(n)
+
+x = data.frame(x1,x4,x5,x2,as.factor(x3))
 
 # define treatment effects
-tau = 2 + 0.5*x[,4]*(2*x[,5]-1)
+tau = 1 + 2*x[,2]*x[,4]
 
 ## define prognostic function (RIC)
 mu = function(x){
-  lev = c(-0.5,0.75,0)
-  result = 1 + x[,1]*(2*x[,2] - 2*(1-x[,2])) + lev[x3]
+  lev = c(2,-1,-4)
+  result = -6 + lev[x[,5]] + 6*abs(x[,3] - 1)
   return(result)
 }
 
 # compute propensity scores and treatment assignment
-pi = pnorm(-0.5 + mu(x) - x[,2] + 0.*x[,4],0,3)
+pi = 0.8*pnorm(3*mu(x)/sd(mu(x))-0.5*x[,1],0,1) + 0.05 + 0.1*runif(n)
 #hist(pi,100)
 z = rbinom(n,1,pi)
 
 # generate outcome variable
-Ey = mu(x) + tau*z
-sig = 0.25*sd(Ey)
-y = Ey + sig*rnorm(n)
+mu_true = mu(x)
+Ey = mu(x) + tau * z
+sig = 0.5 * sd(Ey)
+y = Ey + sig * rnorm(n)
 
 # If you didn't know pi, you would estimate it here
 pihat = pi
 
 # matrix prep
-x <- data.frame(x)
-x[,3] <- as.factor(x[,3])
 x <- makeModelMatrixFromDataFrame(data.frame(x))
-x <- cbind(x[,1],x[,6],x[,-c(1,6)])
 
 # add pihat to the prognostic term matrix
 x1 <- cbind(pihat,x)
 
 
 #### 2. XBCF
-
-# run XBCF
-xbcf.fit = XBCF(y, x1, x, z, p_categorical_pr = 5,  p_categorical_trt = 5)
-
-# get treatment individual-level estimates
-xbcf.tauhats <- getTaus(xbcf.fit)
+xbcf.fit <- XBCF(y, x1, x, z, p_categorical_pr = 4,  p_categorical_trt = 4)
+xbcf.tauhats <- getTaus(xbcf.fit) # get treatment individual-level estimates
 
 # main model parameters can be retrieved below
 #print(xbcf.fit$model_params)
 
-# compare results to inference
+# compare results to true values
 plot(tau, xbcf.tauhats); abline(0,1)
-print(paste0("xbcf RMSE: ", sqrt(mean((xbcf.tauhats - tau)^2))))
+xbcf.rmse <- sqrt(mean((xbcf.tauhats - tau)^2))
 
-#### 2. warmstart-BCF
+# compute coverage CATE
+xbcf.tau <- xbcf.fit$tauhats.adjusted
+lbs <- as.numeric(apply(xbcf.tau,1,quantile,0.025))
+ubs <- as.numeric(apply(xbcf.tau,1,quantile,0.975))
+xbcf.cate.cover <- mean(ubs > tau & lbs < tau)
 
-fit <- wsbcf(y, x, x, z, xbcf_fit = xbcf.fit, pihat = pihat, pcat_con = 5, pcat_mod = 5)
+# print
+print(paste0("xbcf RMSE: ", xbcf.rmse))
+print(paste0("xbcf CATE coverage: ", xbcf.cate.cover))
 
-ws.tauhats <- getPointEstimates(fit)
 
-# compare results to inference
+#### 3. warmstart-BCF
+fit <- wsbcf(y, x, x, z, xbcf_fit = xbcf.fit, pihat = pihat, pcat_con = 4, pcat_mod = 4)
+ws.tauhats <- getTaus(fit)
+
+# compare results to true values
 plot(tau, ws.tauhats); abline(0,1)
-print(paste0("wsbcf RMSE: ", sqrt(mean((ws.tauhats - tau)^2))))
+ws.rmse <- sqrt(mean((ws.tauhats - tau)^2))
+
+# compute coverage CATE
+ws.tau <- fit$tau_draws
+lbs <- as.numeric(apply(ws.tau,1,quantile,0.025))
+ubs <- as.numeric(apply(ws.tau,1,quantile,0.975))
+ws.cate.cover <- mean(ubs > tau & lbs < tau)
+
+# print
+print(paste0("wsbcf RMSE: ", ws.rmse))
+print(paste0("wsbcf CATE coverage: ", ws.cate.cover))

@@ -57,9 +57,21 @@ pcat = ncol(data.mod) - 25
 
 ########### WARM-START BCF CATE ESTIMATION ###########
 fit <- wsbcf(y, data.mod, data.mod, z, pcat_con = pcat, pcat_mod = pcat)
-tauhats <- getTaus(fit)
+ws.tauhats <- getTaus(fit)
 
-plot(tau.true,tauhats)
+# RMSE
+ws.rmse <- sqrt(mean((ws.tauhats - tau.true)^2))
+
+# CATE coverage
+ws.tau <- fit$tau_draws
+lbs <- as.numeric(apply(ws.tau,1,quantile,0.025))
+ubs <- as.numeric(apply(ws.tau,1,quantile,0.975))
+ws.cate.cover <- mean(ubs > tau.true & lbs < tau.true)
+
+# print
+print(paste0("wsbcf RMSE: ", ws.rmse))
+print(paste0("wsbcf CATE coverage: ", ws.cate.cover))
+
+# plot
+plot(tau.true,ws.tauhats)
 abline(0,1)
-
-print(paste0("wsbcf RMSE: ", sqrt(mean((tauhats - tau.true)^2))))
