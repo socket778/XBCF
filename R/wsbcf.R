@@ -69,16 +69,10 @@ wsbcf <- function(y, x_con, x_mod = x_con, z, n_sim = 100, n_burn = 10, cores = 
 
   # compute pihat if it wasn't provided with the call
   if(is.null(pihat)) {
-    swp = 20
-    brn = 3
-    fit = XBART::XBART.multinomial(y=matrix(z), num_class=2, X=x_con, Xtest=x_con,
-                            num_trees=3, num_sweeps=swp, max_depth=2,
-                            num_cutpoints=NULL, alpha=0.95, beta=1.25, tau_a = 1, tau_b = 1,
-                            no_split_penality = 1,  burnin = brn, mtry = NULL, p_categorical = pcat_con,
-                            kap = 1, s = 1, verbose = FALSE, set_random_seed = FALSE,
-                            random_seed = NULL, sample_weights_flag = TRUE, separate_tree = TRUE)
-    a = apply(fit$yhats_test[brn:swp,,], c(2,3), median)
-    pihat = apply(a,1,which.max)-1
+    sink("/dev/null") # silence output
+    fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+    sink() # close the stream
+    pihat = fitz$fitted.values
   }
 
   # run xbcf if fit objects was not provided in the function call / check object class if the fit is provided with the call

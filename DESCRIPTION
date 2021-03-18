@@ -1,14 +1,14 @@
 Package: XBCF
 Type: Package
-Title: XBCF: Accelerated Bayesian Causal Forests
-Version: 0.1
-Date: 2020-08-05
+Title: XBCF: Accelerated Bayesian Causal Forest
+Version: 0.1.2
+Date: 2021-03-17
 Author: Jingyu He, Saar Yalov, P. Richard Hahn, Lee Reeves, Nikolay Krantsevich
 Maintainer: Nikolay Krantsevich <krantsevich@asu.edu>
 Description: Conditional average treatment effect estimation with a tree-based method providing separate regularization for the treatment and prognostic terms.
 License: Apache License (== 2.0)
-Imports: Rcpp (>= 0.12.13), bcf2, XBART, doParallel
-Remotes: github::JingyuHe/bcf2, github::JingyuHe/XBART
+Imports: Rcpp (>= 0.12.13), bcf2, nnet, doParallel
+Remotes: github::JingyuHe/bcf2
 LinkingTo: Rcpp, RcppArmadillo
 NeedsCompilation: yes
 RoxygenNote: 7.1.1
