@@ -25,7 +25,7 @@
 #' @return A fit file, which contains the draws from the model as well as parameter draws at each sweep.
 #' @export
 
-XBCF <- function(y, z, x_con, x_mod = x_con, pihat,
+XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
                 num_sweeps = 60, burnin = 20,
                 max_depth = 50, Nmin = 1L,
                 num_cutpoints = 100,
@@ -65,6 +65,14 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat,
     if(class(y) != "matrix"){
         cat("Msg: input y is not a matrix, try to convert type.\n")
         y = as.matrix(y)
+    }
+
+    # compute pihat if it wasn't provided with the call
+    if(is.null(pihat)) {
+        sink("/dev/null") # silence output
+        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+        sink() # close the stream
+        pihat = fitz$fitted.values
     }
     if(class(pihat) != "matrix"){
         cat("Msg: input X_tau is not a matrix, try to convert type.\n")
