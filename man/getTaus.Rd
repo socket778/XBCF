@@ -10,7 +10,7 @@ getTaus(fit)
 \item{fit}{A wsbcf or XBCF fit object.}
 }
 \value{
-A vector of treatment effect point estimates.
+An array of treatment effect point estimates.
 }
 \description{
 This function allows to get individual level treatment estimates.

@@ -10,7 +10,7 @@ getMus(fit)
 \item{fit}{A wsbcf or XBCF fit object.}
 }
 \value{
-A vector of prognostic effect point estimates.
+An array of prognostic effect point estimates.
 }
 \description{
 This function allows to get individual level prognostic estimates.

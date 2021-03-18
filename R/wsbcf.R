@@ -1,14 +1,15 @@
 #' This function runs the warm-start model on the given data.
 #'
 #' @param y An array of outcome variables of length n (expected to be continuos).
+#' @param z A binary array of treatment assignments of length n.
 #' @param x_con An input matrix for the prognostic term of size n by p1. Column order matters: continuos features should all bgo before of categorical.
 #' @param x_mod An input matrix for the treatment term of size n by p2 (default x_mod = x_con). Column order matters: continuos features should all go beforeof categorical.
-#' @param z A binary vector of treatment assignments of length n.
+#' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated inside wsbcf using nnet function.
 #' @param n_sim The number of post-burnin iterations (default is 100).
 #' @param n_burn The number of burnin iterations (default is 10).
 #' @param cores The number of cores available for the model (default is NULL, i.e. autodect and use all).
-#' @param pihat A vector propensity score estimates of length n (default is NULL). In the default case propensity scores are evaluated within the wsbcf function with nnet.
-#' @param xbcf_fit A fit object from XBCF model (optional; default is NULL). In the default case XBCF model is run within the wsbcf function.
+#' @param pihat An array of propensity score estimates of length n (default is NULL). In the default case propensity scores are evaluated within the wsbcf function with nnet.
+#' @param xbcf_fit A fit object from XBCF model (default is NULL). In the default case XBCF model is run within the wsbcf function.
 #' @param xbcf_sweeps Total number of sweeps for the XBCF run (default is 60).
 #' @param xbcf_burn Total number of burnin sweeps for the XBCF run (default is 20).
 #' @param pcat_con The number of categorical inputs in the prognostic term input matrix x_con.
@@ -18,16 +19,16 @@
 #' @param alpha_con Base parameter for tree prior on trees in prognostic forest (default is 0.95).
 #' @param beta_con Power parameter for tree prior on trees in prognostic forest (default is 1.25).
 #' @param tau_con Prior variance over the mean on on trees in prognostic forest (default is 0.6*var(y)/n_trees_con)
-#' @param alpha_mod Base parameter for tree prior on trees in treatment forest (default is 0.95).
-#' @param beta_mod Power parameter for tree prior on trees in treatment forest (default is 1.25).
+#' @param alpha_mod Base parameter for tree prior on trees in treatment forest (default is 0.25).
+#' @param beta_mod Power parameter for tree prior on trees in treatment forest (default is 3).
 #' @param tau_mod Prior variance over the mean on on trees in treatment forest (default is 0.1*var(y)/n_trees_mod)
 #'
 #' @return A fit file, which contains the draws from the model.
 #' @export
 
-wsbcf <- function(y, x_con, x_mod = x_con, z, n_sim = 100, n_burn = 10, cores = NULL,
+wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = NULL,
                   pihat = NULL, xbcf_fit = NULL, xbcf_sweeps = 60, xbcf_burn = 20,
-                  pcat_con = NULL, pcat_mod = NULL, n_trees_con = 30, n_trees_mod = 10,
+                  pcat_con = NULL, pcat_mod = pcat_con, n_trees_con = 30, n_trees_mod = 10,
                   alpha_con = 0.95, beta_con = 1.25, tau_con = NULL,
                   alpha_mod = 0.25, beta_mod = 3, tau_mod = NULL) {
 
@@ -81,8 +82,8 @@ wsbcf <- function(y, x_con, x_mod = x_con, z, n_sim = 100, n_burn = 10, cores = 
       stop("the number of categorical variables needs to be provided for XBCF")
     }
     xm <- as.matrix(x_mod)
-    xc <- as.matrix(cbind(pihat,x_con))
-    xbcf_fit = XBCF::XBCF(y, xc, xm, z, p_categorical_pr = pcat_con,  p_categorical_trt = pcat_mod)
+    xc <- as.matrix(x_con)
+    xbcf_fit = XBCF::XBCF(y, z, xc, xm, pihat, pcat_con = pcat_con,  pcat_mod = pcat_mod)
   } else if (class(xbcf_fit) != "XBCF") {
     stop("xbcf_fit should be an object of class XBCF")
   }
