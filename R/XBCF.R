@@ -50,19 +50,19 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
     #X = matrix(c(x[,1][index],x[,2][index],x[,3][index]),nrow=length(x[,1]))
     #z = z[index]
 
-    if(class(x_con)[1] != "matrix"){
+    if(!("matrix" %in% class(x_con))){
         cat("Msg: input X is not a matrix, try to convert type.\n")
         x_con = as.matrix(x_con)
     }
-    if(class(x_mod)[1] != "matrix"){
+    if(!("matrix" %in% class(x_mod))){
         cat("Msg: input X_tau is not a matrix, try to convert type.\n")
         x_mod = as.matrix(x_mod)
     }
-    if(class(z) != "matrix"){
+    if(!("matrix" %in% class(z))){
         cat("Msg: input z is not a matrix, try to convert type.\n")
         z = as.matrix(z)
     }
-    if(class(y) != "matrix"){
+    if(!("matrix" %in% class(y))){
         cat("Msg: input y is not a matrix, try to convert type.\n")
         y = as.matrix(y)
     }
@@ -74,7 +74,7 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
         sink() # close the stream
         pihat = fitz$fitted.values
     }
-    if(class(pihat) != "matrix"){
+    if(!("matrix" %in% class(pihat))){
         cat("Msg: input X_tau is not a matrix, try to convert type.\n")
         pihat = as.matrix(pihat)
     }

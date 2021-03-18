@@ -4,11 +4,10 @@
 #' @param z A binary array of treatment assignments of length n.
 #' @param x_con An input matrix for the prognostic term of size n by p1. Column order matters: continuos features should all bgo before of categorical.
 #' @param x_mod An input matrix for the treatment term of size n by p2 (default x_mod = x_con). Column order matters: continuos features should all go beforeof categorical.
-#' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated inside wsbcf using nnet function.
 #' @param n_sim The number of post-burnin iterations (default is 100).
 #' @param n_burn The number of burnin iterations (default is 10).
 #' @param cores The number of cores available for the model (default is NULL, i.e. autodect and use all).
-#' @param pihat An array of propensity score estimates of length n (default is NULL). In the default case propensity scores are evaluated within the wsbcf function with nnet.
+#' @param pihat An array of propensity score estimates of length n (default is NULL). In the default case propensity scores are estimated inside wsbcf using nnet function.
 #' @param xbcf_fit A fit object from XBCF model (default is NULL). In the default case XBCF model is run within the wsbcf function.
 #' @param xbcf_sweeps Total number of sweeps for the XBCF run (default is 60).
 #' @param xbcf_burn Total number of burnin sweeps for the XBCF run (default is 20).
@@ -110,7 +109,7 @@ wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = 
                             use_tauscale = TRUE, ntree_control = n_trees_con, ntree_moderate = n_trees_mod, ini_bcf = FALSE, verbose = FALSE,
                             base_control = alpha_con, power_control = beta_con, base_moderate = alpha_mod, power_moderate = beta_mod)
 
-  ws.list <- foreach::foreach (i= (xbcf_burn + 1):(xbcf_sweeps - xbcf_burn), .packages = c('bcf2'),
+  ws.list <- foreach::foreach (i= (xbcf_burn + 1):(xbcf_sweeps), .packages = c('bcf2'),
                       .combine='comb', .multicombine=TRUE, .init=list(list(), list())) %dopar%
     {
       # compute initialization parameters per every sweep of XBCF we initialize warm-start at
@@ -143,7 +142,12 @@ wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = 
   tm <- proc.time() - tm # time tracker
 
   #### OUTPUT OBJECT
-  obj <- list(tau_draws = tau_draws, y_draws = y_draws)
+  params <- list(n_sim = n_sim, n_burn = n_burn, cores = cores,
+                 xbcf_sweeps = xbcf_sweeps, xbcf_burn = xbcf_burn,
+                 pcat_con = pcat_con, pcat_mod = pcat_mod, n_trees_con = n_trees_con, n_trees_mod = n_trees_mod,
+                 alpha_con = alpha_con, beta_con = beta_con, tau_con = tau_con,
+                 alpha_mod = alpha_mod, beta_mod = beta_mod, tau_mod = tau_mod)
+  obj <- list(tau_draws = tau_draws, y_draws = y_draws, parameters = params)
   class(obj) <- "wsbcf"
 
   return(obj)
