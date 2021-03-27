@@ -90,9 +90,9 @@ wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = 
   # detect cores and use them all if cores were not specified
   if(is.null(cores)){
     cores = parallel::detectCores()
-    doParallel::registerDoParallel(cores)
   }
 
+  doParallel::registerDoParallel(cores)
 
   #### WARMSTART LOOP
 
