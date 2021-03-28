@@ -130,8 +130,7 @@ int XBARTcpp::get_M() { return ((int)params.M); }
 void XBCFcpp::_fit(int n_t, int d_t, double *a_t, // treatment
                    int n_p, int d_p, double *a_p, // prognostic
                    int n_y, double *a_y,          // y
-                   int n_z, int *a_z,             // z
-                   size_t p_cat)
+                   int n_z, int *a_z)             // z
 {
 
   size_t N = n_p; // just for convenience to have a single n

@@ -19,73 +19,84 @@ except ImportError:
         pass
 
 
-"""
-// TODO: 1. remove unnecessary functions
-//			 2. try to ignore json -- comment it out (ask Saar about it if seems like an integrtal part of the code)
-// 			 3. - rewrite __init__ function
-//			 4. - review logic of the checkers and updaters (add to the list if need to rewrite)
-//			 5. - rewrite __convert_params_check_types
-//			 6. - rewrite fit
-//           7. - fix description of XBCF object
-//           8. update object description
-//           9. return the json functions
-"""
+
+# todo: 1. remove unnecessary functions
+#	    2. update json function -- ask Saar if needed
+#       8. update object description
 
 
 class XBCF(object):
     """
-	Python extension for Accelerated Bayesian Additive Regression Trees
+    Model for fitting Accelerated Bayesian Causal Forest
+
     Parameters
     ----------
-	num_trees : int
-        Number of trees in each iteration.
-	num_sweeps : int
-        Number of sweeps (MCMC draws).
-	n_min: int
-		Minimum number of samples in each final node.
-	num_cutpoints: int
-		For continuous variable, number of adaptive cutpoint candidates
-		considered in each split .
-	alpha: double
-		Tree prior hyperparameter : alpha * (1 + depth) ^ beta.
-	beta: double
-		Tree prior hyperparameter : alpha * (1 + depth) ^ beta.
-	tau: double / "auto"
-		Prior for leaf mean variance : mu_j ~ N(0,tau)
-	burnin: int
-		Number of sweeps used to burn in - not used for prediction.
-	max_depth_num: int
-		Represents the maximum size of each tree - size is usually determined via tree prior.
-		Use this only when wanting to determnistically cap the size of each tree.
-	mtry: int / "auto"
-		Number of variables considered at each split - like random forest.
-	kap: double
-		Prior for sigma :  sigma^2 | residaul ~  1/ sqrt(G)
-		where G ~ gamma( (num_samples + kap) / 2, 2/(sum(residual^2) + s) )
-	s: double
-		Prior for sigma :  sigma^2 | residaul ~  1/ sqrt(G)
-		where G ~ gamma( (num_samples + kap) / 2, 2/(sum(residual^2) + s) )
-	verbose: bool
-		Print the progress
-	parallel: bool
-		Do computation in parallel
-	seed: int
-		Random seed, should be a positive integer
-	model: str
-		"Normal": Regression problems
-				: Classification problems (encode Y \in{ -1,1})
-		"Multinomial" : Classes encoded as integers
-		"Probit": Classification problems (encode Y \in{ -1,1})
-
-	no_split_penality: double
-		Weight of no-split option. The default value in the normal model is log(num_cutpoints).
-		Values should be considered in log scale.
-	sample_weights_flag: bool (True)
-		To sample weights according to Dirchlet distribution
-	num_classes: int (1)
-		Number of classes
-
-	"""
+    num_sweeps : int
+        Number of sweeps.
+    burnin: int
+        Number of sweeps used to burn in - not used for prediction.
+    max_depth: int
+        Represents the maximum size of each tree - size is usually determined via tree prior.
+        Use this only when wanting to determnistically cap the size of each tree.
+    Nmin: int
+        Minimum number of samples in each final node.
+    num_cutpoints: int
+        For continuous variable, number of adaptive cutpoint candidates
+        considered in each split.
+    no_split_penality: double
+        Weight of no-split option. The default value in the normal model is log(num_cutpoints).
+        Values should be considered in log scale.
+    mtry_pr: int
+        Number of variables considered at each split  - like random forest (prognostic forest).
+    mtry_trt: int
+        Number of variables considered at each split  - like random forest (treatment forest).
+    p_categorical_pr: int
+        Number of categorical variable (data used for prognostic forest).
+    p_categorical_trt: int
+        Number of categorical variable (data used for treatment forest).
+    num_trees_pr: int
+        Number of trees in each iteration (prognostic forest).
+    alpha_pr: double
+        Tree prior hyperparameter (prognostic forest) : alpha_pr * (1 + depth) ^ beta_pr.
+    beta_pr: double
+        Tree prior hyperparameter (prognostic forest) : alpha_pr * (1 + depth) ^ beta_pr.
+    tau_pr: double
+        Prior for leaf mean variance (prognostic forest) : mu_j ~ N(0,tau_pr)
+    kap_pr: double
+        Prior for sigma_0 (control group):  sigma_0^2 | residual ~  1/ sqrt(G)
+        where G ~ gamma( (num_samples_0 + kap_pr) / 2, 2/(sum(residual^2) + s_pr) )
+    s_pr: double
+        Prior for sigma_0 (control group):  sigma_0^2 | residual ~  1/ sqrt(G)
+        where G ~ gamma( (num_samples_0 + kap_pr) / 2, 2/(sum(residual^2) + s_pr) )
+    num_trees_trt: int
+        Number of trees in each iteration (treatment forest).
+    alpha_trt: double
+        Tree prior hyperparameter (treatment forest) : alpha_trt * (1 + depth) ^ beta_trt.
+    beta_trt: double
+        Tree prior hyperparameter (treatment forest) : alpha_trt * (1 + depth) ^ beta_trt.
+    tau_trt: double
+        Prior for leaf mean variance (treatment forest) : mu_j ~ N(0,tau_trt)
+    kap_trt: double
+        Prior for sigma_1 (moderated group):  sigma_1^2 | residual ~  1/ sqrt(G)
+        where G ~ gamma( (num_samples_1 + kap_trt) / 2, 2/(sum(residual^2) + s_trt) )
+    s_trt: double
+        Prior for sigma_1 (moderated group):  sigma_1^2 | residual ~  1/ sqrt(G)
+        where G ~ gamma( (num_samples_1 + kap_trt) / 2, 2/(sum(residual^2) + s_trt) )
+    verbose: bool
+        Print the progress
+    parallel: bool (True)
+        Do computation in parallel
+    seed: int
+        Random seed, should be a positive integer
+    sample_weights_flag: bool (True)
+        To sample weights according to Dirchlet distribution
+    a_scaling: bool (True)
+        Use scaling model parameter (a) for the prognostic term.
+    b_scaling: bool (True)
+        Use scaling model parameters (b_0, b_1) for the treatment term.
+    standardize_target: bool (True)
+        Standardize the target variable.
+    """
 
     def __init__(
         self,
@@ -94,22 +105,22 @@ class XBCF(object):
         max_depth: int = 250,
         Nmin: int = 1,
         num_cutpoints: int = 100,
-        no_split_penality="auto",
+        no_split_penality: int = -1,
         mtry_pr: int = 0,
         mtry_trt: int = 0,
-        p_categorical_pr: int = 0,
-        p_categorical_trt: int = 0,
-        num_trees_pr: int = 100,
+        p_categorical_pr = None,
+        p_categorical_trt = None,
+        num_trees_pr: int = 30,
         alpha_pr: float = 0.95,
         beta_pr: float = 1.25,
-        tau_pr: float = 0.0,
+        tau_pr: int = -1,
         kap_pr: float = 16.0,
         s_pr: float = 4.0,
         pr_scale: bool = False,
-        num_trees_trt: int = 100,
+        num_trees_trt: int = 10,
         alpha_trt: float = 0.25,
         beta_trt: float = 3.0,
-        tau_trt: float = 0.0,
+        tau_trt: int = -1,
         kap_trt: float = 16.0,
         s_trt: float = 4.0,
         trt_scale: bool = False,
@@ -120,9 +131,21 @@ class XBCF(object):
         sample_weights_flag: bool = True,
         a_scaling: bool = True,
         b_scaling: bool = True,
-        standardize_target = True,
+        standardize_target: bool = True,
     ):
         assert num_sweeps > burnin, "num_sweep must be greater than burnin"
+        assert p_categorical_pr is not None, "p_categorical_pr must be provided as an input"
+        assert p_categorical_trt is not None, "p_categorical_trt must be provided as an input"
+        assert p_categorical_pr >= 0, "p_categorical_pr must be a non-negative integer"
+        assert p_categorical_trt >= 0, "p_categorical_trt must be a non-negative integer"
+        if not isinstance(p_categorical_pr, int):
+            raise TypeError("p_categorical_pr must be integer")
+        if not isinstance(p_categorical_trt, int):
+            raise TypeError("p_categorical_trt must be integer")
+        if not isinstance(mtry_pr, int):
+            raise TypeError("mtry_pr must be integer")
+        if not isinstance(mtry_trt, int):
+            raise TypeError("mtry_trt must be integer")
         self.params = OrderedDict(
             [
                 ("num_sweeps", num_sweeps),
@@ -173,8 +196,8 @@ class XBCF(object):
 
     def __add_columns(self, x_t, x):
         """
-		Keep columns internally
-		"""
+        Keep columns internally
+        """
         if isinstance(x_t, DataFrame):
             self.columns_trt = x_t.columns
         else:
@@ -191,7 +214,7 @@ class XBCF(object):
         self, x_t, fit_x_t, x=None, fit_x=None, y=None, fit_y=None, z=None, fit_z=None
     ):
         """
-		Convert DataFrame to numpy
+        Convert DataFrame to numpy
 		"""
         if isinstance(x_t, DataFrame):
             fit_x_t = x_t.values
@@ -240,29 +263,33 @@ class XBCF(object):
     def __check_test_shape(self, x):
         assert x.shape[1] == self.num_columns_trt, "Mismatch on number of columns"
 
-    def __check_params(self, p_cat):
-        assert p_cat <= self.num_columns_pr, "p_cat must be <= number of columns"
+    def __check_params(self):
+        assert (self.params["p_categorical_pr"] <= self.num_columns_pr), "p_categorical_pr must be <= number of columns"
+        assert (self.params["p_categorical_trt"] <= self.num_columns_trt), "p_categorical_trt must be <= number of columns"
         assert (
             self.params["mtry_pr"] <= self.num_columns_pr
-        ), "mtry must be <= number of columns"
+        ), "mtry_pr must be <= number of columns"
+        assert (
+            self.params["mtry_trt"] <= self.num_columns_trt
+        ), "mtry_trt must be <= number of columns"
 
-    def __update_mtry_tau_penality(self, x_t, x):
+    def __update_mtry_tau_penality(self, x_t, x, y):
         """
 		Handle mtry, tau, and no_split_penality defaults
 		"""
-        if self.params["mtry_trt"] == "auto":
+        if self.params["mtry_trt"] <= 0:
             self.params["mtry_trt"] = self.num_columns_trt
-        if self.params["tau_trt"] == "auto":
-            self.params["tau_trt"] = 0.0
+        if self.params["tau_trt"] <= 0:
+            self.params["tau_trt"] = 0.1 * np.var(y) / self.params["num_trees_trt"]
 
-        if self.params["mtry_pr"] == "auto":
+        if self.params["mtry_pr"] <= 0:
             self.params["mtry_pr"] = self.num_columns_pr
-        if self.params["tau_pr"] == "auto":
-            self.params["tau_pr"] = float(1 / self.params["num_trees_pr"])
+        if self.params["tau_pr"] <= 0:
+            self.params["tau_pr"] = 0.6 * np.var(y) / self.params["num_trees_pr"]
 
         from math import log
 
-        if self.params["no_split_penality"] == "auto":
+        if self.params["no_split_penality"] < 0:
             self.params["no_split_penality"] = log(self.params["num_cutpoints"])
 
     def __convert_params_check_types(self, **params):
@@ -280,22 +307,22 @@ class XBCF(object):
                 ("max_depth", 250),
                 ("Nmin", 1),
                 ("num_cutpoints", 100),
-                ("no_split_penality", 0.0),
-                ("mtry_pr", 0),
-                ("mtry_trt", 0),
-                ("p_categorical_pr", 0),
-                ("p_categorical_trt", 0),
-                ("num_trees_pr", 100),
+                ("no_split_penality", -1),
+                ("mtry_pr", -1),
+                ("mtry_trt", -1),
+                ("p_categorical_pr", -1),
+                ("p_categorical_trt", -1),
+                ("num_trees_pr", 30),
                 ("alpha_pr", 0.95),
                 ("beta_pr", 1.25),
-                ("tau_pr", 0.0),
+                ("tau_pr", -1),
                 ("kap_pr", 16.0),
                 ("s_pr", 4.0),
                 ("pr_scale", False),
-                ("num_trees_trt", 100),
+                ("num_trees_trt", 10),
                 ("alpha_trt", 0.25),
                 ("beta_trt", 3.0),
-                ("tau_trt", 0.0),
+                ("tau_trt", -1),
                 ("kap_trt", 16.0),
                 ("s_trt", 4.0),
                 ("trt_scale", False),
@@ -316,7 +343,7 @@ class XBCF(object):
                 ("max_depth", int),
                 ("Nmin", int),
                 ("num_cutpoints", int),
-                ("no_split_penality", float),
+                ("no_split_penality", int),
                 ("mtry_pr", int),
                 ("mtry_trt", int),
                 ("p_categorical_pr", int),
@@ -324,14 +351,14 @@ class XBCF(object):
                 ("num_trees_pr", int),
                 ("alpha_pr", float),
                 ("beta_pr", float),
-                ("tau_pr", float),
+                ("tau_pr", int),
                 ("kap_pr", float),
                 ("s_pr", float),
                 ("pr_scale", bool),
                 ("num_trees_trt", int),
                 ("alpha_trt", float),
                 ("beta_trt", float),
-                ("tau_trt", float),
+                ("tau_trt", int),
                 ("kap_trt", float),
                 ("s_trt", float),
                 ("trt_scale", bool),
@@ -359,12 +386,13 @@ class XBCF(object):
                     str(param) + " should conform to type " + str(type_class)
                 )
 
-    def fit(self, x_t, x, y, z, p_cat=0):
+    def fit(self, x_t, x, y, z):
         """
-		Fit XBCF model
+        Fit XBCF model
+
         Parameters
         ----------
-		x_t : DataFrame or numpy array
+        x_t : DataFrame or numpy array
             Feature matrix (predictors), treatment term
         x : DataFrame or numpy array
             Feature matrix (predictors), prognostic term
@@ -372,9 +400,10 @@ class XBCF(object):
             Target (response)
         z : array_like (binary)
             Treatment assignment
-		p_cat: int # move this to params
-			Number of features to treat as categorical for cutpoint options. More efficient.
-			To use this feature set place the categorical features as the last p_cat columns of x
+
+        Returns
+        -------
+        A fit object, which contains unscaled and scaled draws for mu and tau.
 		"""
 
         # Check inputs #
@@ -388,7 +417,7 @@ class XBCF(object):
 
         # Update Values #
         self.__update_fit(x_t, fit_x_t, x, fit_x, y, fit_y, z, fit_z)
-        self.__update_mtry_tau_penality(fit_x_t, fit_x)
+        self.__update_mtry_tau_penality(fit_x_t, fit_x, fit_y)
         # self.__check_params(p_cat)
 
         # Standardize target variable
@@ -412,7 +441,7 @@ class XBCF(object):
         # print(type(fit_y[0]))
         # print(type(fit_z[0]))
         # fit #
-        self._xbcf_cpp._fit(fit_x_t, fit_x, fit_y, fit_z, p_cat)
+        self._xbcf_cpp._fit(fit_x_t, fit_x, fit_y, fit_z)
 
         muhats = self._xbcf_cpp.get_muhats(self.params["num_sweeps"] * fit_x.shape[0])
         tauhats = self._xbcf_cpp.get_tauhats(
@@ -466,7 +495,7 @@ class XBCF(object):
 
         Parameters
         ----------
-		x : DataFrame or numpy array
+        X : DataFrame or numpy array
             Feature matrix (predictors)
         return_mean : bool
             Return mean of samples excluding burn-in as point estimate, default: True
@@ -533,8 +562,20 @@ class XBCF(object):
 
 
     def getParams(self):
+        """
+        Returns
+        -------
+        A list of model parametrs.
+        """
         return self.params
 
     def getTau(self):
+        """
+        Get point-estimates of tau from the fitted values.
+
+        Returns
+        -------
+        Array of individual-level tau estimates.
+        """
         tauhats = np.mean(self.tauhats_adjusted[:, self.params["burnin"]:], axis=1)
         return tauhats

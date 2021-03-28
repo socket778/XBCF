@@ -13,6 +13,7 @@ from xbcausalforest import XBCF
 
 np.set_printoptions(threshold=sys.maxsize)
 
+help(XBCF)
 
 def rmse(y1, y2):
     return np.sqrt(np.mean((y1 - y2) ** 2))
@@ -67,30 +68,31 @@ tau_test = tau[n - n_test : n]
 
 
 # XBCF parameters
-sweeps = 40
-burn = 15
+sweeps = 60
+burn = 20
 p_cat = 2
 trees_pr = 30
 trees_trt = 10
 
 print("XBCF fit")
 
+# number of categorical variable are the only mandatory inputs
 model = XBCF(
-    num_sweeps=sweeps,
-    burnin=burn,
-    max_depth=250,
-    num_trees_pr=trees_pr,
-    num_trees_trt=trees_trt,
-    mtry_pr=d_p,
-    mtry_trt=d_t,
-    num_cutpoints=100,
-    Nmin=1,
+    #num_sweeps=sweeps,
+    #burnin=burn,
+    #max_depth=250,
+    #num_trees_pr=trees_pr,
+    #num_trees_trt=trees_trt,
+    #mtry_pr=d_p,
+    #mtry_trt=d_t,
+    #num_cutpoints=100,
+    #Nmin=1,
     p_categorical_pr=p_cat,
     p_categorical_trt=p_cat,
-    tau_pr=0.6 * np.var(y) / trees_pr,
-    tau_trt=0.1 * np.var(y) / trees_trt,
-    no_split_penality="auto",
-    parallel=True,
+    #tau_pr= 0.6 * np.var(y) / trees_pr,
+    #tau_trt= 0.1 * np.var(y) / trees_trt,
+    #no_split_penality="auto",
+    #parallel=True,
 )
 
 start = time.time()
@@ -101,6 +103,8 @@ print("seconds elapsed XBCF: ", end - start)
 # get point estimates
 tauhats = model.getTau()
 
+params = model.getParams()
+print(params)
 
 print("CATE rmse train: ", rmse(tau_train, tauhats))
 

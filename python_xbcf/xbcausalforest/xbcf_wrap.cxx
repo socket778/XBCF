@@ -5790,7 +5790,6 @@ SWIGINTERN PyObject *_wrap_XBCFcpp__fit(PyObject *SWIGUNUSEDPARM(self), PyObject
   double *arg9 = (double *) 0 ;
   int arg10 ;
   int *arg11 = (int *) 0 ;
-  size_t arg12 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyArrayObject *array2 = NULL ;
@@ -5801,11 +5800,9 @@ SWIGINTERN PyObject *_wrap_XBCFcpp__fit(PyObject *SWIGUNUSEDPARM(self), PyObject
   int is_new_object8 = 0 ;
   PyArrayObject *array10 = NULL ;
   int is_new_object10 = 0 ;
-  size_t val12 ;
-  int ecode12 = 0 ;
-  PyObject *swig_obj[6] ;
+  PyObject *swig_obj[5] ;
   
-  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp__fit", 6, 6, swig_obj)) SWIG_fail;
+  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp__fit", 5, 5, swig_obj)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_XBCFcpp, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "XBCFcpp__fit" "', argument " "1"" of type '" "XBCFcpp *""'"); 
@@ -5861,12 +5858,7 @@ SWIGINTERN PyObject *_wrap_XBCFcpp__fit(PyObject *SWIGUNUSEDPARM(self), PyObject
     arg10 = (int) array_size(array10,0);
     arg11 = (int*) array_data(array10);
   }
-  ecode12 = SWIG_AsVal_size_t(swig_obj[5], &val12);
-  if (!SWIG_IsOK(ecode12)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "XBCFcpp__fit" "', argument " "12"" of type '" "size_t""'");
-  } 
-  arg12 = static_cast< size_t >(val12);
-  (arg1)->_fit(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  (arg1)->_fit(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2)

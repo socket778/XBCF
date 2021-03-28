@@ -106,8 +106,8 @@ class XBCFcpp(object):
     def __init__(self, *args):
         _xbcf_cpp_.XBCFcpp_swiginit(self, _xbcf_cpp_.new_XBCFcpp(*args))
 
-    def _fit(self, n_t: "int", n_p: "int", n_y: "int", n_z: "int", p_cat: "size_t") -> "void":
-        return _xbcf_cpp_.XBCFcpp__fit(self, n_t, n_p, n_y, n_z, p_cat)
+    def _fit(self, n_t: "int", n_p: "int", n_y: "int", n_z: "int") -> "void":
+        return _xbcf_cpp_.XBCFcpp__fit(self, n_t, n_p, n_y, n_z)
 
     def _predict(self, n_t: "int") -> "void":
         return _xbcf_cpp_.XBCFcpp__predict(self, n_t)
