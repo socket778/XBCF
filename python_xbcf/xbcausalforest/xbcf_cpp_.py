@@ -109,11 +109,14 @@ class XBCFcpp(object):
     def _fit(self, n_t: "int", n_p: "int", n_y: "int", n_z: "int") -> "void":
         return _xbcf_cpp_.XBCFcpp__fit(self, n_t, n_p, n_y, n_z)
 
-    def _predict(self, n_t: "int") -> "void":
-        return _xbcf_cpp_.XBCFcpp__predict(self, n_t)
+    def _predict(self, n_t: "int", term: "int") -> "void":
+        return _xbcf_cpp_.XBCFcpp__predict(self, n_t, term)
 
     def get_muhats(self, size: "int") -> "void":
         return _xbcf_cpp_.XBCFcpp_get_muhats(self, size)
+
+    def get_muhats_test(self, size: "int") -> "void":
+        return _xbcf_cpp_.XBCFcpp_get_muhats_test(self, size)
 
     def get_tauhats(self, size: "int") -> "void":
         return _xbcf_cpp_.XBCFcpp_get_tauhats(self, size)

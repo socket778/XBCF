@@ -13,7 +13,7 @@ from xbcausalforest import XBCF
 
 np.set_printoptions(threshold=sys.maxsize)
 
-help(XBCF)
+#help(XBCF)
 
 def rmse(y1, y2):
     return np.sqrt(np.mean((y1 - y2) ** 2))
@@ -62,10 +62,13 @@ tau_train = tau[0 : n - n_test]
 y_train = y[0 : n - n_test]
 z_train = z[0 : n - n_test]
 
-# test
+# test tau
 X_test = X[n - n_test : n, :]
 tau_test = tau[n - n_test : n]
 
+# test mu (in case we are interested in prognostic estimates as well)
+X1_test = X1[n - n_test : n, :]
+mu_test = mu[n - n_test : n]
 
 # XBCF parameters
 sweeps = 60
@@ -103,8 +106,8 @@ print("seconds elapsed XBCF: ", end - start)
 # get point estimates
 tauhats = model.getTau()
 
-params = model.getParams()
-print(params)
+#params = model.getParams()
+#print(params)
 
 print("CATE rmse train: ", rmse(tau_train, tauhats))
 
@@ -119,7 +122,7 @@ print("==== OOS fit example ====")
 
 # get predicted point estimates
 tauhats_test = model.predict(X_test)
-
+#tauhats_test, muhats_test = model.predict(X_test, X1_test, return_muhat=True)
 
 print("CATE rmse test: ", rmse(tau_test, tauhats_test))
 plt.scatter(tau_test, tauhats_test)

@@ -5920,13 +5920,16 @@ SWIGINTERN PyObject *_wrap_XBCFcpp__predict(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int arg3 ;
   double *arg4 = (double *) 0 ;
+  int arg5 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyArrayObject *array2 = NULL ;
   int is_new_object2 = 0 ;
-  PyObject *swig_obj[2] ;
+  int val5 ;
+  int ecode5 = 0 ;
+  PyObject *swig_obj[3] ;
   
-  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp__predict", 2, 2, swig_obj)) SWIG_fail;
+  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp__predict", 3, 3, swig_obj)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_XBCFcpp, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "XBCFcpp__predict" "', argument " "1"" of type '" "XBCFcpp *""'"); 
@@ -5945,7 +5948,12 @@ SWIGINTERN PyObject *_wrap_XBCFcpp__predict(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg3 = (int) array_size(array2,1);
     arg4 = (double*) array_data(array2);
   }
-  (arg1)->_predict(arg2,arg3,arg4);
+  ecode5 = SWIG_AsVal_int(swig_obj[2], &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "XBCFcpp__predict" "', argument " "5"" of type '" "int""'");
+  } 
+  arg5 = static_cast< int >(val5);
+  (arg1)->_predict(arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2)
@@ -5998,6 +6006,49 @@ SWIGINTERN PyObject *_wrap_XBCFcpp_get_muhats(PyObject *SWIGUNUSEDPARM(self), Py
     arg3 = (double*) array_data(array2);
   }
   (arg1)->get_muhats(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  {
+    resultobj = SWIG_Python_AppendOutput(resultobj,(PyObject*)array2);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_XBCFcpp_get_muhats_test(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  XBCFcpp *arg1 = (XBCFcpp *) 0 ;
+  int arg2 ;
+  double *arg3 = (double *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *array2 = NULL ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "XBCFcpp_get_muhats_test", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_XBCFcpp, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "XBCFcpp_get_muhats_test" "', argument " "1"" of type '" "XBCFcpp *""'"); 
+  }
+  arg1 = reinterpret_cast< XBCFcpp * >(argp1);
+  {
+    npy_intp dims[1];
+    if (!PyInt_Check(swig_obj[1]))
+    {
+      const char* typestring = pytype_string(swig_obj[1]);
+      PyErr_Format(PyExc_TypeError,
+        "Int dimension expected.  '%s' given.",
+        typestring);
+      SWIG_fail;
+    }
+    arg2 = (int) PyInt_AsLong(swig_obj[1]);
+    dims[0] = (npy_intp) arg2;
+    array2 = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    if (!array2) SWIG_fail;
+    arg3 = (double*) array_data(array2);
+  }
+  (arg1)->get_muhats_test(arg2,arg3);
   resultobj = SWIG_Py_Void();
   {
     resultobj = SWIG_Python_AppendOutput(resultobj,(PyObject*)array2);
@@ -6285,6 +6336,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "XBCFcpp__fit", _wrap_XBCFcpp__fit, METH_VARARGS, NULL},
 	 { "XBCFcpp__predict", _wrap_XBCFcpp__predict, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_muhats", _wrap_XBCFcpp_get_muhats, METH_VARARGS, NULL},
+	 { "XBCFcpp_get_muhats_test", _wrap_XBCFcpp_get_muhats_test, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_tauhats", _wrap_XBCFcpp_get_tauhats, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_tauhats_test", _wrap_XBCFcpp_get_tauhats_test, METH_VARARGS, NULL},
 	 { "XBCFcpp_get_b", _wrap_XBCFcpp_get_b, METH_VARARGS, NULL},

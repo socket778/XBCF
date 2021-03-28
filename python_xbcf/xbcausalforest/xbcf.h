@@ -64,7 +64,7 @@ private:
 	matrix<double> yhats_xinfo;
 	matrix<double> muhats_xinfo;
 	matrix<double> tauhats_xinfo;
-	//	matrix<double> muhats_test_xinfo; // we only need the treatment effect
+	matrix<double> muhats_test_xinfo;
 	matrix<double> tauhats_test_xinfo;
 	// matrix<double> yhats_test_xinfo; // don't have test
 	matrix<double> sigma0_draw_xinfo;
@@ -124,7 +124,7 @@ public:
 						int n_y, double *a_y,					 // y
 						int n_z, int *a_z);						 // z
 
-	void _predict(int n_t, int d_t, double *a_t);
+	void _predict(int n_t, int d_t, double *a_t, int term);
 
 	// Getters
 	//int get_M(void);
@@ -133,6 +133,7 @@ public:
 	//	int get_N_sweeps(void) { return ((int)params.num_sweeps); };
 	// int get_burnin(void) { return ((int)params.burnin); };
 	void get_muhats(int size, double *arr);
+	void get_muhats_test(int size, double *arr);
 	void get_tauhats(int size, double *arr);
 	void get_tauhats_test(int size, double *arr);
 	void get_b(int size, double *arr);

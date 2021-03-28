@@ -260,8 +260,11 @@ class XBCF(object):
         #    z.astype(int) == z
         # ), "z must be a positive integer"
 
-    def __check_test_shape(self, x):
-        assert x.shape[1] == self.num_columns_trt, "Mismatch on number of columns"
+    def __check_test_shape(self, x, term):
+        if term == 1:
+            assert x.shape[1] == self.num_columns_trt, "Mismatch on number of columns for tau input matrix"
+        else:
+            assert x.shape[1] == self.num_columns_pr, "Mismatch on number of columns for mu input matrix"
 
     def __check_params(self):
         assert (self.params["p_categorical_pr"] <= self.num_columns_pr), "p_categorical_pr must be <= number of columns"
@@ -490,13 +493,15 @@ class XBCF(object):
         self.is_fit = True
         return self
 
-    def predict(self, X, return_mean=True, return_muhat=False):
+    def predict(self, X, X1=None, return_mean=True, return_muhat=False):
         """Estimate tau for data X
 
         Parameters
         ----------
         X : DataFrame or numpy array
-            Feature matrix (predictors)
+            Feature matrix (predictors); features match the treatment input matrix used when fitting the model.
+        X1 : DataFrame or numpy array
+            Feature matrix (predictors); features match the prognostic input matrix used when fitting the model.
         return_mean : bool
             Return mean of samples excluding burn-in as point estimate, default: True
         return_muhat : bool
@@ -514,11 +519,14 @@ class XBCF(object):
 
         self.__check_input_type(X)
         pred_x = X.copy()
-        self.__check_test_shape(pred_x)
+        self.__check_test_shape(pred_x, 1) # 1 = check treatment input
         self.__update_fit(X, pred_x)  # unnecessary in general?
 
-        # Run Predict
-        self._xbcf_cpp._predict(pred_x)
+        if return_muhat is True:
+            assert X1 is not None, "X1, input matrix for mu, must be provided as a separate input."
+
+        # Run Predict (1 = treatment forest is used)
+        self._xbcf_cpp._predict(pred_x, 1)
         # Convert to numpy
         tauhats_test = self._xbcf_cpp.get_tauhats_test(
             self.params["num_sweeps"] * pred_x.shape[0]
@@ -543,8 +551,15 @@ class XBCF(object):
         if return_muhat is False: # Return only treatment estimate
             return thats
         else: # also calculate and return estimate for mu
+
+            pred_x = X1.copy()
+            self.__check_test_shape(pred_x, 0) # 0 = check prognostic input
+
+            # Run Predict (0 = prognostic forest is used)
+            self._xbcf_cpp._predict(pred_x, 0)
+
             # Convert to numpy
-            muhats = self._xbcf_cpp.get_muhats(self.params["num_sweeps"] * pred_x.shape[0])
+            muhats = self._xbcf_cpp.get_muhats_test(self.params["num_sweeps"] * pred_x.shape[0])
             # Convert from colum major
             muhats = muhats.reshape(
                 (pred_x.shape[0], self.params["num_sweeps"]), order="C"

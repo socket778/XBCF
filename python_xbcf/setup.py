@@ -42,7 +42,7 @@ def readme():
 
 setup(
     name="xbcausalforest",
-    version="0.1.2",
+    version="0.1.3",
     author="Jingyu He, Saar Yalov, P. Richard Hahn, Nikolay Krantsevich",
     author_email="krantsevich@gmail.com",
     description="""Implementation of Accelerated Bayesian Causal Forests""",
