@@ -25,8 +25,9 @@
 #' @return A fit file, which contains the draws from the model.
 #' @export
 
-wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = NULL,
-                  pihat = NULL, xbcf_fit = NULL, xbcf_sweeps = 60, xbcf_burn = 20,
+wsbcf <- function(y, z, x_con, x_mod = x_con, pihat = NULL, xbcf_fit = NULL, w = NULL,
+                  n_sim = 100, n_burn = 10, cores = NULL,
+                  xbcf_sweeps = 60, xbcf_burn = 20,
                   pcat_con = NULL, pcat_mod = pcat_con, n_trees_con = 30, n_trees_mod = 10,
                   alpha_con = 0.95, beta_con = 1.25, tau_con = NULL,
                   alpha_mod = 0.25, beta_mod = 3, tau_mod = NULL) {
@@ -101,6 +102,7 @@ wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = 
 
   # the first initial run of warmstart to calculate cutpoint index matrices (we run it for only 2 iterations: nburn = nsim = 1)
   fit_temp =  bcf2::bcf_ini(treedraws_con = as.vector(xbcf_fit$treedraws_pr[sw]), treedraws_mod = as.vector(xbcf_fit$treedraws_trt[sw]),
+                            w = w,
                             muscale_ini = xbcf_fit$a_draws[sw, 1], bscale0_ini = 1, bscale1_ini = 1,
                             sigma_ini = 1, pi_con_tau = sqrt(tau_con), pi_con_sigma = 1, pi_mod_tau = sqrt(tau_mod),
                             pi_mod_sigma = 1, mod_tree_scaling = mod_tree_scaling,
@@ -121,6 +123,7 @@ wsbcf <- function(y, z, x_con, x_mod = x_con, n_sim = 100, n_burn = 10, cores = 
       # the main warm-start BCF function call inside the foreach loop
       # (also include tree draws, sigma draws and a draws from each XBCF sweep we initialize at)
       fit_warmstart = bcf2::bcf_ini(treedraws_con = as.vector(xbcf_fit$treedraws_pr[i]), treedraws_mod = as.vector(xbcf_fit$treedraws_trt[i]),
+                                    w = w,
                                     muscale_ini = xbcf_fit$a_draws[i, 1], bscale0_ini = b0_ini, bscale1_ini = b1_ini,
                                     sigma_ini = xbcf_fit$sigma0_draws[2,i], pi_con_tau = sqrt(tau_con), pi_con_sigma = pi_con_sigma_ini, pi_mod_tau = sqrt(tau_mod),
                                     pi_mod_sigma = pi_mod_sigma_ini, mod_tree_scaling = mod_tree_scaling,
