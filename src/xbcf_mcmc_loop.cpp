@@ -53,6 +53,10 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
     {
       model_ps->update_state(state, tree_ind, x_struct_ps); // Draw Sigma -- the residual needed for the update is computed inside of the function
 
+      // store sigma draws
+      sigma0_draw_xinfo[sweeps][tree_ind] = state->sigma_vec[0]; // storing sigmas
+      sigma1_draw_xinfo[sweeps][tree_ind] = state->sigma_vec[1]; // storing sigmas
+
       if (state->use_all && (sweeps > state->burnin) && (state->mtry_pr != state->p_pr))
       {
         state->use_all = false;
@@ -102,8 +106,8 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
       model_trt->update_state(state, tree_ind, x_struct_trt);
 
       // store sigma draws
-      sigma0_draw_xinfo[sweeps][tree_ind] = state->sigma_vec[0]; // storing sigmas
-      sigma1_draw_xinfo[sweeps][tree_ind] = state->sigma_vec[1]; // storing sigmas
+      sigma0_draw_xinfo[sweeps][state->num_trees_vec[0]+tree_ind] = state->sigma_vec[0]; // storing sigmas
+      sigma1_draw_xinfo[sweeps][state->num_trees_vec[0]+tree_ind] = state->sigma_vec[1]; // storing sigmas
 
       if (state->use_all && (sweeps > state->burnin) && (state->mtry_trt != state->p_trt))
       {

@@ -363,10 +363,10 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
     // ini_matrix(total_fit, N, num_sweeps);
 
     matrix<double> sigma0_draw_xinfo;
-    ini_matrix(sigma0_draw_xinfo, num_trees_trt, num_sweeps);
+    ini_matrix(sigma0_draw_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
     matrix<double> sigma1_draw_xinfo;
-    ini_matrix(sigma1_draw_xinfo, num_trees_trt, num_sweeps);
+    ini_matrix(sigma1_draw_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
     matrix<double> a_xinfo;
     ini_matrix(a_xinfo, num_sweeps, 1);
@@ -424,8 +424,8 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
     Rcpp::NumericMatrix tauhats(N, num_sweeps);
     Rcpp::NumericMatrix muhats(N, num_sweeps);
     // Rcpp::NumericMatrix b_tau(N, num_sweeps);
-    Rcpp::NumericMatrix sigma0_draws(num_trees_trt, num_sweeps);
-    Rcpp::NumericMatrix sigma1_draws(num_trees_trt, num_sweeps);
+    Rcpp::NumericMatrix sigma0_draws(num_trees_trt + num_trees_pr, num_sweeps);
+    Rcpp::NumericMatrix sigma1_draws(num_trees_trt + num_trees_pr, num_sweeps);
     // Rcpp::NumericMatrix b0_draws(num_trees_trt, num_sweeps);
     // Rcpp::NumericMatrix b1_draws(num_trees_trt, num_sweeps);
     Rcpp::NumericMatrix b_draws(num_sweeps, 2);
