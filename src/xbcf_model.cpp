@@ -9,9 +9,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-// called in tree.cpp
-// called from calcSuffStat_categorical, calcSuffStat_continuous
 // adds residual to suff stats for normalmodel (updates the suff stats by adding new values to the old ones)
+// called from calcSuffStat_categorical, calcSuffStat_continuous in tree.cpp
 void xbcfModel::incSuffStat(std::unique_ptr<State> &state, size_t index_next_obs, std::vector<double> &suffstats)
 {
   if (state->fl == 0)
@@ -46,9 +45,8 @@ void xbcfModel::incSuffStat(std::unique_ptr<State> &state, size_t index_next_obs
   return;
 }
 
-// called in tree.cpp
-// called from GFR
-// samples theta for leafs
+// samples leaf parameter
+// called from GFR in tree.cpp
 void xbcfModel::samplePars(std::unique_ptr<State> &state, std::vector<double> &suff_stat, std::vector<double> &theta_vector, double &prob_leaf)
 {
   std::normal_distribution<double> normal_samp(0.0, 1.0);
@@ -75,7 +73,7 @@ void xbcfModel::samplePars(std::unique_ptr<State> &state, std::vector<double> &s
   double m1 = (1.0 / v0) * m0 / denominator1 + suff_stat[1] / pow(s1, 2) / denominator1;
   double v1 = 1.0 / denominator1;
 
-  // test result should be theta
+  // sample leaf parameter
   theta_vector[0] = m1 + sqrt(v1) * normal_samp(state->gen);
 
   // also update probability of leaf parameters
@@ -83,42 +81,26 @@ void xbcfModel::samplePars(std::unique_ptr<State> &state, std::vector<double> &s
   return;
 }
 
-// called in xbcf_mcmc_loop.cpp
-// called from xbcf_mcmc_loop
 // updates sigmas
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::update_state(std::unique_ptr<State> &state, size_t tree_ind, std::unique_ptr<X_struct> &x_struct)
 {
-  // residual_std is only 1 dimensional for regression model
-  // std::vector<double> full_residual_trt;  //(state->n_trt);               // residual for the treated group
-  // std::vector<double> full_residual_ctrl; //(state->n_y - state->n_trt); // residual for the control group
-
-  size_t index_trt = 0;
-  size_t index_ctrl = 0;
+  size_t index_trt = 0; // number of observations in the treatment group
+  size_t index_ctrl = 0; // number of observations in the control group (are these always the same?)
 
   for (size_t i = 0; i < state->n_y; i++)
   {
     if (state->z[i] == 1)
     {
-      // full_residual_trt.push_back((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
       state->full_residual_trt[index_trt] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i];
       index_trt++;
     }
     else
     {
-      // full_residual_ctrl.push_back((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
       state->full_residual_ctrl[index_ctrl] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i];
       index_ctrl++;
     }
   }
-
-  // // make sure two vectors are the same
-  // for(size_t i = 0; i < full_residual_trt.size(); i ++ ){
-  //   cout << "compare trt " << full_residual_trt[i] << " " << state->full_residual_trt[i] << endl;
-  // }
-
-  // for(size_t i = 0; i < full_residual_ctrl.size(); i ++ ){
-  //   cout << "compare ctrl " << full_residual_ctrl[i] << " " << state->full_residual_ctrl[i] << endl;
-  // }
 
   // compute sigma1 for the treated group
   std::gamma_distribution<double> gamma_samp1((state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_trt) + s));
@@ -134,9 +116,8 @@ void xbcfModel::update_state(std::unique_ptr<State> &state, size_t tree_ind, std
   return;
 }
 
-// called in xbcf_mcmc_loop.cpp
-// called from xbcf_mcmc_loop
 // initializes root suffstats
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::initialize_root_suffstat(std::unique_ptr<State> &state, std::vector<double> &suff_stat)
 {
   suff_stat.resize(4);
@@ -151,9 +132,8 @@ void xbcfModel::initialize_root_suffstat(std::unique_ptr<State> &state, std::vec
   return;
 }
 
-// called in tree.cpp
-// called from split_xorder_std_continuous, split_xorder_std_categorical
-// updates node suffstats for the split (or after the split? no, doesn't seem so)
+// updates node suffstats for the split
+// called from split_xorder_std_continuous, split_xorder_std_categorical in tree.cpp
 // it is executed after suffstats for the node has been initialized by suff_stats_ini [defined in tree.h]
 void xbcfModel::updateNodeSuffStat(std::vector<double> &suff_stat, std::unique_ptr<State> &state, matrix<size_t> &Xorder_std, size_t &split_var, size_t row_ind)
 {
@@ -163,10 +143,8 @@ void xbcfModel::updateNodeSuffStat(std::vector<double> &suff_stat, std::unique_p
   return;
 }
 
-// called in tree.cpp
-// called from split_xorder_std_continuous, split_xorder_std_categorical
 // updates the other side node's side suffstats for the split
-// probably should be completely changed for xbcf (no, it's just vector subtraction)
+// called from split_xorder_std_continuous, split_xorder_std_categorical in tree.cpp
 void xbcfModel::calculateOtherSideSuffStat(std::vector<double> &parent_suff_stat, std::vector<double> &lchild_suff_stat, std::vector<double> &rchild_suff_stat, size_t &N_parent, size_t &N_left, size_t &N_right, bool &compute_left_side)
 {
 
@@ -184,23 +162,10 @@ void xbcfModel::calculateOtherSideSuffStat(std::vector<double> &parent_suff_stat
   return;
 }
 
-// called in xbcf_mcmc_loop.cpp
-// called from xbcf_mcmc_loop
 // updates partial residual for the next tree to fit
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::state_sweep(size_t tree_ind, std::vector<double> &fit, std::unique_ptr<X_struct> &x_struct) const
 {
-  /*  size_t next_index = tree_ind + 1;
-  if (next_index == M)
-  {
-    next_index = 0;
-  }
-*/
-  ////////////////////////////////////////////////////////
-  // Be care of line 151 in train_all.cpp, initial_theta
-  ////////////////////////////////////////////////////////
-
-  //cout << (*(x_struct->data_pointers[tree_ind][0]))[0] << " " << (*(x_struct->data_pointers[next_index][0]))[0] << endl;
-
   for (size_t i = 0; i < fit.size(); i++)
   {
     fit[i] += (*(x_struct->data_pointers[tree_ind][i]))[0];
@@ -208,25 +173,15 @@ void xbcfModel::state_sweep(size_t tree_ind, std::vector<double> &fit, std::uniq
   return;
 }
 
-// called in tree.cpp
-// called from GFR, calculate_loglikelihood_continuous, calculate_loglikelihood_categorical, calculate_loglikelihood_nosplit
 // computes likelihood of a split
+// called from GFR, calculate_loglikelihood_continuous, calculate_loglikelihood_categorical, calculate_loglikelihood_nosplit in tree.cpp
 double xbcfModel::likelihood(std::vector<double> &temp_suff_stat, std::vector<double> &suff_stat_all, size_t N_left, bool left_side, bool no_split, std::unique_ptr<State> &state) const
 {
-  // likelihood equation,
-  // note the difference of left_side == true / false
+  // helper variables
   double s0 = 0;
   double s1 = 0;
   double denominator;   // the denominator (1 + tau * precision_squared) is the same for both terms
   double s_psi_squared; // (residual * precision_squared)^2
-
-  /////////////////////////////////////////////////////////////////////////
-  //  [Jingyu's note]
-  //  I know combining likelihood and likelihood_no_split looks nicer
-  //  but this is a very fundamental function, executed many times
-  //  the extra if(no_split) statement and value assignment make the code about 5% slower!!
-  //
-  /////////////////////////////////////////////////////////////////////////
 
   if (state->fl == 0)
   {
@@ -261,17 +216,7 @@ double xbcfModel::likelihood(std::vector<double> &temp_suff_stat, std::vector<do
   return 0.5 * log(1 / denominator) + 0.5 * pow(s_psi_squared, 2) * tau / denominator;
 }
 
-void xbcfModel::ini_residual_std(std::unique_ptr<State> &state)
-{
-  double value = state->ini_var_yhat * ((double)state->num_trees_vec[0] - 1.0) / (double)state->num_trees_vec[0];
-  for (size_t i = 0; i < state->residual_std[0].size(); i++)
-  {
-    state->residual_std[0][i] = (*state->y_std)[i] - value;
-  }
-  return;
-}
-
-// predict function: running the original matrix X through it gives the treatment effect matrix
+// makes a prediction for treatment effect on the given Xtestpointer data
 void xbcfModel::predict_std(const double *Xtestpointer, size_t N_test, size_t p, size_t num_trees, size_t num_sweeps, matrix<double> &yhats_test_xinfo, vector<vector<tree>> &trees)
 {
   matrix<double> output;
@@ -295,6 +240,8 @@ void xbcfModel::predict_std(const double *Xtestpointer, size_t N_test, size_t p,
   return;
 }
 
+// updates parameter a
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::update_a_value(std::unique_ptr<State> &state)
 {
   std::normal_distribution<double> normal_samp(0.0, 1.0);
@@ -304,22 +251,16 @@ void xbcfModel::update_a_value(std::unique_ptr<State> &state)
   double muressum_ctrl = 0;
   double muressum_trt = 0;
 
-  // take mufit right from the state
-  // compute the residual y-b*tau(x) using state's objects y and mu
-  // std::vector<double> residual; // y - b*tau(x) residual for control group
+  // compute the residual y-b*tau(x) using state's objects y_std, tau_fit and b_vec
   for (size_t i = 0; i < state->n_y; i++)
   {
     if (state->z[i] == 1)
     {
-      // residual.push_back((*state->y_std)[i] - state->tau_fit[i] * state->b_vec[1]);
       state->residual[i] = (*state->y_std)[i] - state->tau_fit[i] * state->b_vec[1];
-      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl;
     }
     else
     {
-      // residual.push_back((*state->y_std)[i] - state->tau_fit[i] * state->b_vec[0]);
       state->residual[i] = (*state->y_std)[i] - state->tau_fit[i] * state->b_vec[0];
-      // cout << "compare a " << residual[residual.size() - 1] << " " << state->residual[i] << endl;
     }
   }
 
@@ -337,20 +278,21 @@ void xbcfModel::update_a_value(std::unique_ptr<State> &state)
     }
   }
 
-  // step 1 (control group)
+  // update parameters
   double v0 = 1 / (1.0 + mu2sum_ctrl / pow(state->sigma_vec[0], 2));
   double m0 = v0 * (muressum_ctrl) / pow(state->sigma_vec[0], 2);
 
-  // step 2 (treatment group)
   double v1 = 1 / (1.0 / v0 + mu2sum_trt / pow(state->sigma_vec[1], 2));
   double m1 = v1 * (m0 / v0 + (muressum_trt) / pow(state->sigma_vec[1], 2));
 
-  // test result should be theta
+  // sample a
   state->a = m1 + sqrt(v1) * normal_samp(state->gen);
 
   return;
 }
 
+// updates parameters b0, b1
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::update_b_values(std::unique_ptr<State> &state)
 {
   std::normal_distribution<double> normal_samp(0.0, 1.0);
@@ -360,15 +302,10 @@ void xbcfModel::update_b_values(std::unique_ptr<State> &state)
   double tauressum_ctrl = 0;
   double tauressum_trt = 0;
 
-  // take taufit right from the state
-  // compute the residual y-mu(x) using state's objects y and mu
-  // std::vector<double> residual; // y - a*mu(x) residual
+  // compute the residual y-a*mu(x) using state's objects y_std, mu_fit and a
   for (size_t i = 0; i < state->n_y; i++)
   {
-    // residual.push_back((*state->y_std)[i] - state->a * state->mu_fit[i]);
     state->residual[i] = (*state->y_std)[i] - state->a * state->mu_fit[i];
-
-    // cout << "compare b " << residual[residual.size() - 1] << " " << state->residual[i]  << endl;
   }
 
   for (size_t i = 0; i < state->n_y; i++)
@@ -385,12 +322,14 @@ void xbcfModel::update_b_values(std::unique_ptr<State> &state)
     }
   }
 
+  // update parameters
   double v0 = 1 / (2 + tau2sum_ctrl / pow(state->sigma_vec[0], 2));
   double v1 = 1 / (2 + tau2sum_trt / pow(state->sigma_vec[1], 2));
 
   double m0 = v0 * (tauressum_ctrl) / pow(state->sigma_vec[0], 2);
   double m1 = v1 * (tauressum_trt) / pow(state->sigma_vec[1], 2);
 
+  // sample b0, b1
   double b0 = m0 + sqrt(v0) * normal_samp(state->gen);
   double b1 = m1 + sqrt(v1) * normal_samp(state->gen);
 
@@ -400,14 +339,15 @@ void xbcfModel::update_b_values(std::unique_ptr<State> &state)
   return;
 }
 
-/// new functions for a single-state loop
-
+// sets flag value to distinguish between prognostic and treatment terms in the loop
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::set_flag(size_t &flag, size_t value)
 {
   flag = value;
 }
 
-//
+// subtracts old tree contribution from the fit
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit, std::unique_ptr<X_struct> &x_struct)
 {
   for (size_t i = 0; i < fit.size(); i++)
