@@ -51,11 +51,11 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
     #z = z[index]
 
     if(!("matrix" %in% class(x_con))){
-        cat("Msg: input X is not a matrix, try to convert type.\n")
+        cat("Msg: input x_con is not a matrix, try to convert type.\n")
         x_con = as.matrix(x_con)
     }
     if(!("matrix" %in% class(x_mod))){
-        cat("Msg: input X_tau is not a matrix, try to convert type.\n")
+        cat("Msg: input x_mod is not a matrix, try to convert type.\n")
         x_mod = as.matrix(x_mod)
     }
     if(!("matrix" %in% class(z))){
@@ -75,7 +75,7 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
         pihat = fitz$fitted.values
     }
     if(!("matrix" %in% class(pihat))){
-        cat("Msg: input X_tau is not a matrix, try to convert type.\n")
+        cat("Msg: input pihat is not a matrix, try to convert type.\n")
         pihat = as.matrix(pihat)
     }
 
