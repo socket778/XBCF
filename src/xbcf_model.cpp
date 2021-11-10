@@ -339,13 +339,6 @@ void xbcfModel::update_b_values(std::unique_ptr<State> &state)
   return;
 }
 
-// sets flag value to distinguish between prognostic and treatment terms in the loop
-// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
-void xbcfModel::set_flag(size_t &flag, size_t value)
-{
-  flag = value;
-}
-
 // subtracts old tree contribution from the fit
 // called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit, std::unique_ptr<X_struct> &x_struct)

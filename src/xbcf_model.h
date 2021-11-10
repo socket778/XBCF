@@ -66,8 +66,6 @@ public:
 
   void update_b_values(std::unique_ptr<State> &state);
 
-  void set_flag(size_t &flag, size_t value);
-
   void subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit, std::unique_ptr<X_struct> &x_struct);
 
   void set_state_status(std::unique_ptr<State> &state, size_t value, const double *X, matrix<size_t> &Xorder);
