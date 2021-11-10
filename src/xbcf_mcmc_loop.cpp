@@ -41,7 +41,7 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
       COUT << "--------------------------------" << endl;
     }
 
-    model_ps->set_state_status(state, 0, X_std);
+    model_ps->set_state_status(state, 0, X_std, Xorder_std);
 
     ////////////// Prognostic term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
@@ -86,7 +86,7 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
       }
     }
 
-    model_ps->set_state_status(state, 1, X_tau_std);
+    model_ps->set_state_status(state, 1, X_tau_std, Xorder_tau_std);
 
     ////////////// Treatment term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)

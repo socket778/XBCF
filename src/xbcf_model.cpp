@@ -359,12 +359,13 @@ void xbcfModel::subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit,
 
 //
 //
-void xbcfModel::set_state_status(std::unique_ptr<State> &state, size_t value, const double *X)
+void xbcfModel::set_state_status(std::unique_ptr<State> &state, size_t value, const double *X, matrix<size_t> &Xorder)
 {
   state->fl = value; // value can only be 0 or 1 (to alternate between arms)
   state->iniSplitStorage(state->fl);
   state->adjustMtry(state->fl);
   state->X_std = X;
+  state->Xorder_std = Xorder;
   if(value == 0)
   {
     state->p = state->p_pr;
