@@ -356,3 +356,24 @@ void xbcfModel::subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit,
   }
   return;
 }
+
+//
+//
+void xbcfModel::set_state_status(std::unique_ptr<State> &state, size_t value, const double *X)
+{
+  state->fl = value; // value can only be 0 or 1 (to alternate between arms)
+  state->iniSplitStorage(state->fl);
+  state->adjustMtry(state->fl);
+  state->X_std = X;
+  if(value == 0)
+  {
+    state->p = state->p_pr;
+    state->p_categorical = state->p_categorical_pr;
+    state->p_continuous = state->p_continuous_pr;
+  } else {
+    state->p = state->p_trt;
+    state->p_categorical = state->p_categorical_trt;
+    state->p_continuous = state->p_continuous_trt;
+  }
+
+}

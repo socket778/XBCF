@@ -60,7 +60,6 @@ public:
 
   double likelihood(std::vector<double> &temp_suff_stat, std::vector<double> &suff_stat_all, size_t N_left, bool left_side, bool no_split, std::unique_ptr<State> &state) const;
 
-
   void predict_std(const double *Xtestpointer, size_t N_test, size_t p, size_t num_trees, size_t num_sweeps, matrix<double> &yhats_test_xinfo, vector<vector<tree>> &trees);
 
   void update_a_value(std::unique_ptr<State> &state);
@@ -70,6 +69,8 @@ public:
   void set_flag(size_t &flag, size_t value);
 
   void subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit, std::unique_ptr<X_struct> &x_struct);
+
+  void set_state_status(std::unique_ptr<State> &state, size_t value, const double *X);
 };
 
 #endif
