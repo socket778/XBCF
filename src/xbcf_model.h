@@ -46,7 +46,7 @@ public:
 
   void samplePars(std::unique_ptr<State> &state, std::vector<double> &suff_stat, std::vector<double> &theta_vector, double &prob_leaf);
 
-  void update_state(std::unique_ptr<State> &state, size_t tree_ind, std::unique_ptr<X_struct> &x_struct);
+  void update_state(std::unique_ptr<State> &state);
 
   void initialize_root_suffstat(std::unique_ptr<State> &state, std::vector<double> &suff_stat);
 

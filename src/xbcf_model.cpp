@@ -83,10 +83,10 @@ void xbcfModel::samplePars(std::unique_ptr<State> &state, std::vector<double> &s
 
 // updates sigmas
 // called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
-void xbcfModel::update_state(std::unique_ptr<State> &state, size_t tree_ind, std::unique_ptr<X_struct> &x_struct)
+void xbcfModel::update_state(std::unique_ptr<State> &state)
 {
-  size_t index_trt = 0; // number of observations in the treatment group
-  size_t index_ctrl = 0; // number of observations in the control group (are these always the same?)
+  size_t index_trt = 0; // index of the current observation in the treatment group
+  size_t index_ctrl = 0; // index of the current observation in the control group
 
   for (size_t i = 0; i < state->n_y; i++)
   {
