@@ -66,9 +66,9 @@ Rcpp::List xbcf_predict(arma::mat X,
     xbcfModel *model = new xbcfModel();
 
     // Predict
-    model->predict_std(Xpointer, N, p_pr, M_pr, N_sweeps,
+    model->predict_std(Xpointer, N, p_pr, N_sweeps,
                        muhats_test_xinfo, *trees_pr);
-    model->predict_std(X_tau_pointer, N, p_trt, M_trt, N_sweeps,
+    model->predict_std(X_tau_pointer, N, p_trt, N_sweeps,
                        tauhats_test_xinfo, *trees_trt);
 
     // Convert back to Rcpp

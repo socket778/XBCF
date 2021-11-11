@@ -63,3 +63,11 @@ rmse <- function(a,b) {
   return(sqrt(mean((a - b)^2)))
 }
 rmse(tau,tauhats)
+
+## check predicted values
+x1 <- cbind(x,pi)
+taus <- predictTaus(fit_xbcf, x, x1)
+
+# should be along the line
+plot(taus,tauhats)
+abline(0,1,col='red')

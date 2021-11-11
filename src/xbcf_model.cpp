@@ -217,7 +217,7 @@ double xbcfModel::likelihood(std::vector<double> &temp_suff_stat, std::vector<do
 }
 
 // makes a prediction for treatment effect on the given Xtestpointer data
-void xbcfModel::predict_std(const double *Xtestpointer, size_t N_test, size_t p, size_t num_trees, size_t num_sweeps, matrix<double> &yhats_test_xinfo, vector<vector<tree>> &trees)
+void xbcfModel::predict_std(const double *Xtestpointer, size_t N_test, size_t p, size_t num_sweeps, matrix<double> &yhats_test_xinfo, vector<vector<tree>> &trees)
 {
   matrix<double> output;
 

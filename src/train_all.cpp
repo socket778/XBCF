@@ -417,8 +417,8 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
                    state, model_pr, model_trt, x_struct_pr, x_struct_trt, a_scaling, b_scaling);
 
     //predict tauhats and muhats
-    model_trt->predict_std(Xpointer_tau, N, p_trt, num_trees_trt, num_sweeps, tauhats_xinfo, *trees_trt);
-    model_pr->predict_std(Xpointer, N, p_pr, num_trees_pr, num_sweeps, muhats_xinfo, *trees_pr);
+    model_trt->predict_std(Xpointer_tau, N, p_trt, num_sweeps, tauhats_xinfo, *trees_trt);
+    model_pr->predict_std(Xpointer, N, p_pr, num_sweeps, muhats_xinfo, *trees_pr);
 
     // R Objects to Return
     Rcpp::NumericMatrix tauhats(N, num_sweeps);
