@@ -350,8 +350,8 @@ void xbcfModel::subtract_old_tree_fit(size_t tree_ind, std::vector<double> &fit,
   return;
 }
 
-//
-//
+// sets unique term parameters in the state object depending on the term being updated
+// called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
 void xbcfModel::set_state_status(std::unique_ptr<State> &state, size_t value, const double *X, matrix<size_t> &Xorder)
 {
   state->fl = value; // value can only be 0 or 1 (to alternate between arms)
