@@ -53,6 +53,7 @@ fit_xbcf = XBCF(y, z, x, x, pi, pcat_con = p_cat)
 
 ## obtain the treatment effect estimates from the fit
 tauhats <- getTaus(fit_xbcf)
+muhats <- getMus(fit_xbcf)
 
 ## plot the estimates
 plot(tau,tauhats)
@@ -64,10 +65,13 @@ rmse <- function(a,b) {
 }
 rmse(tau,tauhats)
 
-## check predicted values
+## check predicted values with the same inputs
 x1 <- cbind(x,pi)
-taus <- predictTaus(fit_xbcf, x, x1)
+taus <- predictTaus(fit_xbcf, x1, x)
+mus <- predictMuDraws(fit_xbcf, x1,x)
 
 # should be along the line
 plot(taus,tauhats)
+abline(0,1,col='red')
+plot(mus,muhats)
 abline(0,1,col='red')

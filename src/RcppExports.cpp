@@ -26,6 +26,20 @@ RcppExport SEXP _XBCF_xbcf_predict(SEXP XSEXP, SEXP X_tauSEXP, SEXP tree_pnt_prS
     END_RCPP
 }
 
+// predict
+Rcpp::List predict(arma::mat X, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt);
+RcppExport SEXP _XBCF_predict(SEXP XSEXP, SEXP tree_pntSEXP)
+{
+    BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter<arma::mat>::type X(XSEXP);
+    Rcpp::traits::input_parameter<Rcpp::XPtr<std::vector<std::vector<tree>>>>::type tree_pnt(tree_pntSEXP);
+    rcpp_result_gen = Rcpp::wrap(predict(X, tree_pnt));
+    return rcpp_result_gen;
+    END_RCPP
+}
+
 // r_to_json
 Rcpp::StringVector r_to_json(double y_mean, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt);
 RcppExport SEXP _XBCF_r_to_json(SEXP y_meanSEXP, SEXP tree_pntSEXP)
@@ -164,6 +178,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_XBCF_sample_int_expjs", (DL_FUNC)&_XBCF_sample_int_expjs, 3},
     {"_XBCF_XBCF_cpp", (DL_FUNC)&_XBCF_XBCF_cpp, 35},
     {"_XBCF_xbcf_predict", (DL_FUNC)&_XBCF_xbcf_predict, 4},
+    {"_XBCF_predict", (DL_FUNC)&_XBCF_predict, 2},
     {NULL, NULL, 0}};
 
 RcppExport void R_init_XBCF(DllInfo *dll)
