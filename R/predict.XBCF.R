@@ -106,7 +106,7 @@ predictMuDraws <- function(model, X, X_tau, burnin = NULL) {
 }
 
 # predict function returning prognostic point-estimates (average over draws)
-predictMuDraws <- function(model, X, X_tau, burnin = NULL) {
+predictMu <- function(model, X, X_tau, burnin = NULL) {
     obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
                 model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
