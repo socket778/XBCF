@@ -102,7 +102,7 @@ predictMuDraws <- function(model, X, burnin = NULL) {
 }
 
 # predict function returning prognostic point-estimates (average over draws)
-predictMu <- function(model, X, burnin = NULL) {
+predictMus <- function(model, X, burnin = NULL) {
     obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)

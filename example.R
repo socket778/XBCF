@@ -71,7 +71,7 @@ rmse(tau,tauhats)
 x1 <- cbind(pi,x)
 #obj <- predict.XBCF(fit_xbcf, x1, x, burnin = 20)
 taus <- predictTaus(fit_xbcf, x)
-mus <- predictMu(fit_xbcf, x1)
+mus <- predictMus(fit_xbcf, x1)
 
 # should be along the line
 plot(taus,tauhats)
