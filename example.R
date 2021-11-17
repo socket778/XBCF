@@ -65,10 +65,13 @@ rmse <- function(a,b) {
 }
 rmse(tau,tauhats)
 
-## check predicted values with the same inputs
-x1 <- cbind(x,pi)
-taus <- predictTaus(fit_xbcf, x1, x)
-mus <- predictMuDraws(fit_xbcf, x1,x)
+
+
+## predict function check: predict with the same inputs
+x1 <- cbind(pi,x)
+#obj <- predict.XBCF(fit_xbcf, x1, x, burnin = 20)
+taus <- predictTaus(fit_xbcf, x)
+mus <- predictMu(fit_xbcf, x1)
 
 # should be along the line
 plot(taus,tauhats)

@@ -1,6 +1,6 @@
 predict.XBCF <- function(model, X, X_tau, burnin) {
-    obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
-                model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
+    obj1 = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
+    obj2 = .Call(`_XBCF_predict`, X_tau, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -15,20 +15,18 @@ predict.XBCF <- function(model, X, X_tau, burnin) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        taus[, i - burnin] = obj$tauhats[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
-        mus[, i - burnin] = obj$muhats[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
     }
 
-    obj$tauhats <- taus
-    obj$muhats <- mus
+    obj <- list(mudraws=mus, taudraws=taus)
 
     return(obj)
 }
 
 # predict function returning draws of treatment estimates
-predictTauDraws <- function(model, X, X_tau, burnin = NULL) {
-    obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
-                model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictTauDraws <- function(model, X, burnin = NULL) {
+    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -45,16 +43,15 @@ predictTauDraws <- function(model, X, X_tau, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$tauhats[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
     }
 
     return(tauhat.draws)
 }
 
 # predict function returning treatment point-estimates (average over draws)
-predictTaus <- function(model, X, X_tau, burnin = NULL) {
-    obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
-                model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictTaus <- function(model, X, burnin = NULL) {
+    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -71,7 +68,7 @@ predictTaus <- function(model, X, X_tau, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$tauhats[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
     }
 
     tauhats <- rowMeans(tauhat.draws)
@@ -80,9 +77,8 @@ predictTaus <- function(model, X, X_tau, burnin = NULL) {
 }
 
 # predict function returning draws of prognostic estimates
-predictMuDraws <- function(model, X, X_tau, burnin = NULL) {
-    obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
-                model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictMuDraws <- function(model, X, burnin = NULL) {
+    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -99,16 +95,15 @@ predictMuDraws <- function(model, X, X_tau, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$muhats[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
     }
 
     return(muhat.draws)
 }
 
 # predict function returning prognostic point-estimates (average over draws)
-predictMu <- function(model, X, X_tau, burnin = NULL) {
-    obj = .Call(`_XBCF_xbcf_predict`, X, X_tau,
-                model$model_list$tree_pnt_pr, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictMu <- function(model, X, burnin = NULL) {
+    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -125,7 +120,7 @@ predictMu <- function(model, X, X_tau, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$muhats[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
     }
 
     muhats <- rowMeans(muhat.draws)
