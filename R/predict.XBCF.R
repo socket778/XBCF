@@ -52,8 +52,14 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
 }
 
 # predict function returning draws of treatment estimates
-predictTauDraws <- function(model, X, burnin = NULL) {
-    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictTauDraws <- function(model, x_mod, burnin = NULL) {
+
+    if(!("matrix" %in% class(x_mod))){
+        cat("Msg: input x_mod is not a matrix -- converting type.\n")
+        x_mod = as.matrix(x_mod)
+    }
+
+    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -66,7 +72,7 @@ predictTauDraws <- function(model, X, burnin = NULL) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    tauhat.draws <- matrix(NA, nrow(X), sweeps - burnin)
+    tauhat.draws <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
@@ -77,8 +83,14 @@ predictTauDraws <- function(model, X, burnin = NULL) {
 }
 
 # predict function returning treatment point-estimates (average over draws)
-predictTaus <- function(model, X, burnin = NULL) {
-    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predictTaus <- function(model, x_mod, burnin = NULL) {
+
+    if(!("matrix" %in% class(x_mod))){
+        cat("Msg: input x_mod is not a matrix -- converting type.\n")
+        x_mod = as.matrix(x_mod)
+    }
+
+    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -91,7 +103,7 @@ predictTaus <- function(model, X, burnin = NULL) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    tauhat.draws <- matrix(NA, nrow(X), sweeps - burnin)
+    tauhat.draws <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {

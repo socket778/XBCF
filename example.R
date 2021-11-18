@@ -68,10 +68,12 @@ rmse(tau,tauhats)
 
 
 ## predict function check: predict with the same inputs
-x1 <- cbind(pi,x)
-#obj <- predict.XBCF(fit_xbcf, x1, x, burnin = 20)
+#x1 <- cbind(pi,x)
+#obj <- predict.XBCF(fit_xbcf, x, x, pi, burnin = 20)
+#mus <- rowMeans(obj$mudraws)
+#taus <- rowMeans(obj$taudraws)
 taus <- predictTaus(fit_xbcf, x)
-mus <- predictMus(fit_xbcf, x1)
+mus <- predictMus(fit_xbcf, x, pi)
 
 # should be along the line
 plot(taus,tauhats)
