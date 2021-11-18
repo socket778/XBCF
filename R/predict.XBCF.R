@@ -104,8 +104,28 @@ predictTaus <- function(model, X, burnin = NULL) {
 }
 
 # predict function returning draws of prognostic estimates
-predictMuDraws <- function(model, X, burnin = NULL) {
-    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
+predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
+
+    if(!("matrix" %in% class(x_con))){
+        cat("Msg: input x_con is not a matrix -- converting type.\n")
+        x_con = as.matrix(x_con)
+    }
+
+    if(is.null(pihat)) {
+        sink("/dev/null") # silence output
+        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+        sink() # close the stream
+        pihat = fitz$fitted.values
+    }
+
+    if(!("matrix" %in% class(pihat))){
+        cat("Msg: input pihat is not a matrix -- converting type.\n")
+        pihat = as.matrix(pihat)
+    }
+
+    x_con <- cbind(pihat, x_con)
+
+    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -118,7 +138,7 @@ predictMuDraws <- function(model, X, burnin = NULL) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    muhat.draws <- matrix(NA, nrow(X), sweeps - burnin)
+    muhat.draws <- matrix(NA, nrow(x_con), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
@@ -129,8 +149,28 @@ predictMuDraws <- function(model, X, burnin = NULL) {
 }
 
 # predict function returning prognostic point-estimates (average over draws)
-predictMus <- function(model, X, burnin = NULL) {
-    obj = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
+predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
+
+    if(!("matrix" %in% class(x_con))){
+        cat("Msg: input x_con is not a matrix -- converting type.\n")
+        x_con = as.matrix(x_con)
+    }
+
+    if(is.null(pihat)) {
+        sink("/dev/null") # silence output
+        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+        sink() # close the stream
+        pihat = fitz$fitted.values
+    }
+
+    if(!("matrix" %in% class(pihat))){
+        cat("Msg: input pihat is not a matrix -- converting type.\n")
+        pihat = as.matrix(pihat)
+    }
+
+    x_con <- cbind(pihat, x_con)
+
+    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
@@ -143,7 +183,7 @@ predictMus <- function(model, X, burnin = NULL) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    muhat.draws <- matrix(NA, nrow(X), sweeps - burnin)
+    muhat.draws <- matrix(NA, nrow(x_con), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
