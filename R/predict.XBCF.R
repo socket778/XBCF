@@ -1,17 +1,44 @@
-predict.XBCF <- function(model, X, X_tau, burnin) {
-    obj1 = .Call(`_XBCF_predict`, X, model$model_list$tree_pnt_pr)  # model$tree_pnt
-    obj2 = .Call(`_XBCF_predict`, X_tau, model$model_list$tree_pnt_trt)  # model$tree_pnt
+predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
+
+    if(!("matrix" %in% class(x_con))){
+        cat("Msg: input x_con is not a matrix, try to convert type.\n")
+        x_con = as.matrix(x_con)
+    }
+    if(!("matrix" %in% class(x_mod))){
+        cat("Msg: input x_mod is not a matrix, try to convert type.\n")
+        x_mod = as.matrix(x_mod)
+    }
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
 
+    if(is.null(pihat)) {
+        sink("/dev/null") # silence output
+        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+        sink() # close the stream
+        pihat = fitz$fitted.values
+    }
+    if(!("matrix" %in% class(pihat))){
+        cat("Msg: input pihat is not a matrix, try to convert type.\n")
+        pihat = as.matrix(pihat)
+    }
+
+    x_con <- cbind(pihat, x_con)
+
+    obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
+    obj2 = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
+
+
     sweeps <- ncol(model$tauhats)
+    if(is.null(burnin)) {
+        burnin <- model$model_params$burnin
+    }
 
     if(burnin >= sweeps){
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    taus <- matrix(NA, nrow(X), sweeps - burnin)
-    mus <- matrix(NA, nrow(X), sweeps - burnin)
+    mus <- matrix(NA, nrow(x_con), sweeps - burnin)
+    taus <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
