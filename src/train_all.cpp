@@ -525,6 +525,9 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
                                                          Rcpp::Named("beta_trt") = beta_trt,
                                                          Rcpp::Named("tau_trt") = tau_trt,
                                                          Rcpp::Named("p_categorical_trt") = p_categorical_trt,
-                                                         Rcpp::Named("num_trees_trt") = num_trees_trt)
+                                                         Rcpp::Named("num_trees_trt") = num_trees_trt),
+        Rcpp::Named("input_var_count") = Rcpp::List::create(Rcpp::Named("x_con") = p_pr-1,
+                                                            Rcpp::Named("x_mod") = p_trt)
+
     );
 }
