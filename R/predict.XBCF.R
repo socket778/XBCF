@@ -10,6 +10,16 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     }
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
+    if(ncol(x_con) != model$input_var_count$x_con) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_con,
+        ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
+    }
+    if(ncol(x_mod) != model$input_var_count$x_mod) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_mod,
+        ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
+    }
 
     if(is.null(pihat)) {
         sink("/dev/null") # silence output
@@ -20,6 +30,11 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     if(!("matrix" %in% class(pihat))){
         cat("Msg: input pihat is not a matrix, try to convert type.\n")
         pihat = as.matrix(pihat)
+    }
+
+    if(ncol(pihat) != 1) {
+        stop(paste0('Propensity score input must be a 1-column matrix or NULL (default).
+        A matrix with ', ncol(pihat), ' columns was provided instead.'))
     }
 
     x_con <- cbind(pihat, x_con)
@@ -59,6 +74,12 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
         x_mod = as.matrix(x_mod)
     }
 
+    if(ncol(x_mod) != model$input_var_count$x_mod) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_mod,
+        ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
+    }
+
     obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
 
     # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
@@ -88,6 +109,12 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
     if(!("matrix" %in% class(x_mod))){
         cat("Msg: input x_mod is not a matrix -- converting type.\n")
         x_mod = as.matrix(x_mod)
+    }
+
+    if(ncol(x_mod) != model$input_var_count$x_mod) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_mod,
+        ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
     obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
@@ -123,6 +150,12 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
         x_con = as.matrix(x_con)
     }
 
+    if(ncol(x_con) != model$input_var_count$x_con) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_con,
+        ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
+    }
+
     if(is.null(pihat)) {
         sink("/dev/null") # silence output
         fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
@@ -133,6 +166,11 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     if(!("matrix" %in% class(pihat))){
         cat("Msg: input pihat is not a matrix -- converting type.\n")
         pihat = as.matrix(pihat)
+    }
+
+    if(ncol(pihat) != 1) {
+        stop(paste0('Propensity score input must be a 1-column matrix or NULL (default).
+        A matrix with ', ncol(pihat), ' columns was provided instead.'))
     }
 
     x_con <- cbind(pihat, x_con)
@@ -168,6 +206,12 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
         x_con = as.matrix(x_con)
     }
 
+    if(ncol(x_con) != model$input_var_count$x_con) {
+        stop(paste0('Check dimensions of input matrices. The model was trained on
+        x_con with ', model$input_var_count$x_con,
+        ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
+    }
+
     if(is.null(pihat)) {
         sink("/dev/null") # silence output
         fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
@@ -178,6 +222,11 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
     if(!("matrix" %in% class(pihat))){
         cat("Msg: input pihat is not a matrix -- converting type.\n")
         pihat = as.matrix(pihat)
+    }
+
+    if(ncol(pihat) != 1) {
+        stop(paste0('Propensity score input must be a 1-column matrix or NULL (default).
+        A matrix with ', ncol(pihat), ' columns was provided instead.'))
     }
 
     x_con <- cbind(pihat, x_con)
