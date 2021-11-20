@@ -1,15 +1,25 @@
+#' predict.XBCF provides predicted values of a*mu(x_con, pihat) and (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrices x_con, x_mod and pihat.
+#' The number of columns in matrices should match the number of columns in matrices used for training the model.
+#'
+#' @param model A trained XBCF model.
+#' @param x_con An input matrix for the prognostic term of size n by p1. Column order matters: continuos features should all bgo before of categorical.
+#' @param x_mod An input matrix for the treatment term of size n by p2 (default x_mod = x_con). Column order matters: continuos features should all go before categorical.
+#' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated using nnet function.
+#' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
+#'
+#' @return A list with two matrices. Each matrix corresponds to a set of draws of predicted values; rows are datapoints, columns are iterations.
+#' @export
 predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
 
-    if(!("matrix" %in% class(x_con))){
+    if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix, try to convert type.\n")
         x_con = as.matrix(x_con)
     }
-    if(!("matrix" %in% class(x_mod))){
+    if(!("matrix" %in% class(x_mod))) {
         cat("Msg: input x_mod is not a matrix, try to convert type.\n")
         x_mod = as.matrix(x_mod)
     }
 
-    # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
     if(ncol(x_con) != model$input_var_count$x_con) {
         stop(paste0('Check dimensions of input matrices. The model was trained on
         x_con with ', model$input_var_count$x_con,
@@ -27,7 +37,7 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
         sink() # close the stream
         pihat = fitz$fitted.values
     }
-    if(!("matrix" %in% class(pihat))){
+    if(!("matrix" %in% class(pihat))) {
         cat("Msg: input pihat is not a matrix, try to convert type.\n")
         pihat = as.matrix(pihat)
     }
@@ -39,16 +49,15 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
-    obj2 = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
-
+    obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
+    obj2 = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- ncol(model$tauhats)
     if(is.null(burnin)) {
         burnin <- model$model_params$burnin
     }
 
-    if(burnin >= sweeps){
+    if(burnin >= sweeps) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
@@ -66,10 +75,18 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     return(obj)
 }
 
-# predict function returning draws of treatment estimates
+#' predictTauDraws provides predicted values of treatment effect (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrix x_mod.
+#' The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+#'
+#' @param model A trained XBCF model.
+#' @param x_mod An input matrix for the treatment term of size n by p2. Column order matters: continuos features should all go before categorical.
+#' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
+#'
+#' @return A matrix with a set of draws of predicted treatment effect estimates; rows are datapoints, columns are iterations.
+#' @export
 predictTauDraws <- function(model, x_mod, burnin = NULL) {
 
-    if(!("matrix" %in% class(x_mod))){
+    if(!("matrix" %in% class(x_mod))) {
         cat("Msg: input x_mod is not a matrix -- converting type.\n")
         x_mod = as.matrix(x_mod)
     }
@@ -80,9 +97,7 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
         ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
-    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
-
-    # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
+    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -103,10 +118,18 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
     return(tauhat.draws)
 }
 
-# predict function returning treatment point-estimates (average over draws)
+#' predictTaus averages predicted values of treatment effect (b1-b0)*tau(x_mod), given input matrix x_mod.
+#' The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+#'
+#' @param model A trained XBCF model.
+#' @param x_mod An input matrix for the treatment term of size n by p2. Column order matters: continuos features should all go before categorical.
+#' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
+#'
+#' @return An array with point-estimates of treatment effect per datapoint in the given matrix.
+#' @export
 predictTaus <- function(model, x_mod, burnin = NULL) {
 
-    if(!("matrix" %in% class(x_mod))){
+    if(!("matrix" %in% class(x_mod))) {
         cat("Msg: input x_mod is not a matrix -- converting type.\n")
         x_mod = as.matrix(x_mod)
     }
@@ -117,16 +140,14 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
         ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
-    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)  # model$tree_pnt
-
-    # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
+    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
         burnin <- model$model_params$burnin
     }
 
-    if(burnin >= sweeps){
+    if(burnin >= sweeps) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
@@ -142,10 +163,19 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
     return(tauhats)
 }
 
-# predict function returning draws of prognostic estimates
+#' predictMuDraws provides predicted values of prognostic effect a*mu(x_con,pihat) from each post-burnin draw, given input matrix x_mod and pihat.
+#' The number of columns in x_con here should match the number of columns in x_con used for training the model.
+#'
+#' @param model A trained XBCF model.
+#' @param x_con An input matrix for the treatment term of size n by p1. Column order matters: continuos features should all go before categorical.
+#' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated using nnet function.
+#' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
+#'
+#' @return A matrix with a set of draws of predicted prognostic effect estimates; rows are datapoints, columns are iterations.
+#' @export
 predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
 
-    if(!("matrix" %in% class(x_con))){
+    if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix -- converting type.\n")
         x_con = as.matrix(x_con)
     }
@@ -163,7 +193,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
         pihat = fitz$fitted.values
     }
 
-    if(!("matrix" %in% class(pihat))){
+    if(!("matrix" %in% class(pihat))) {
         cat("Msg: input pihat is not a matrix -- converting type.\n")
         pihat = as.matrix(pihat)
     }
@@ -175,9 +205,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
-
-    # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
+    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -198,10 +226,19 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     return(muhat.draws)
 }
 
-# predict function returning prognostic point-estimates (average over draws)
+#' predictMus averages predicted values of prognostic effect a*mu(x_con,pihat), given input matrix x_mod and pihat.
+#' The number of columns in x_con here should match the number of columns in x_con used for training the model.
+#'
+#' @param model A trained XBCF model.
+#' @param x_con An input matrix for the treatment term of size n by p1. Column order matters: continuos features should all go before categorical.
+#' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated using nnet function.
+#' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
+#'
+#' @return An array with point-estimates of prognostic effect per datapoint in the given matrix.
+#' @export
 predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 
-    if(!("matrix" %in% class(x_con))){
+    if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix -- converting type.\n")
         x_con = as.matrix(x_con)
     }
@@ -219,7 +256,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
         pihat = fitz$fitted.values
     }
 
-    if(!("matrix" %in% class(pihat))){
+    if(!("matrix" %in% class(pihat))) {
         cat("Msg: input pihat is not a matrix -- converting type.\n")
         pihat = as.matrix(pihat)
     }
@@ -231,16 +268,14 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)  # model$tree_pnt
-
-    # TODO: add a check for matrix dimensions (may need to be somewhat sophisticated)
+    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
         burnin <- model$model_params$burnin
     }
 
-    if(burnin >= sweeps){
+    if(burnin >= sweeps) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 

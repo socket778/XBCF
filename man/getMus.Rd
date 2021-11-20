@@ -7,7 +7,7 @@
 getMus(fit)
 }
 \arguments{
-\item{fit}{A wsbcf or XBCF fit object.}
+\item{fit}{An XBCF fit object.}
 }
 \value{
 An array of prognostic effect point estimates.
