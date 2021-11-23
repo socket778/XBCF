@@ -111,7 +111,8 @@ void xbcfModel::update_state(std::unique_ptr<State> &state)
   double sigma0 = 1.0 / sqrt(gamma_samp0(state->gen));
 
   //update sigma vector for the state
-  state->update_sigma(sigma0, sigma1);
+  state->update_sigma(sigma0, 0);
+  state->update_sigma(sigma1, 1);
   //state->update_precision_squared(sigma0, sigma1);
   return;
 }

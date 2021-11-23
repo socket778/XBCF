@@ -23,7 +23,7 @@ public:
     // residual for treated group, length n_trt
     std::vector<double> full_residual_trt;  //(state->n_trt);               // residual for the treated group
     // residual for control group, length n_y - n_trt
-    std::vector<double> full_residual_ctrl; 
+    std::vector<double> full_residual_ctrl;
 
 
     // Random
@@ -95,11 +95,9 @@ public:
     }
 
     // sigma update for xbcfModel       TODO: move to xbcfClass
-    void update_sigma(double sigma0, double sigma1)
+    void update_sigma(double sigma, size_t ind)
     {
-        this->sigma_vec[0] = sigma0; // sigma for the control group
-        this->sigma_vec[1] = sigma1; // sigma for the treatment group
-
+        this->sigma_vec[ind] = sigma; // sigma for the "ind" group
         return;
     }
 
@@ -160,7 +158,7 @@ public:
         this->split_count_current_tree = std::vector<double>(p, 0);
         this->mtry_weight_current_tree = std::vector<double>(p, 0);
         this->sigma = sigma;
-        
+
         this->n_min = n_min;
         this->n_cutpoints = n_cutpoints;
         this->parallel = parallel;
