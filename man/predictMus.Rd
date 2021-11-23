@@ -2,8 +2,7 @@
 % Please edit documentation in R/predict.XBCF.R
 \name{predictMus}
 \alias{predictMus}
-\title{predictMus averages predicted values of prognostic effect a*mu(x_con,pihat), given input matrix x_mod and pihat.
-The number of columns in x_con here should match the number of columns in x_con used for training the model.}
+\title{Get point-estimates of prognostic effect}
 \usage{
 predictMus(model, x_con, pihat = NULL, burnin = NULL)
 }
@@ -20,6 +19,5 @@ predictMus(model, x_con, pihat = NULL, burnin = NULL)
 An array with point-estimates of prognostic effect per datapoint in the given matrix.
 }
 \description{
-predictMus averages predicted values of prognostic effect a*mu(x_con,pihat), given input matrix x_mod and pihat.
-The number of columns in x_con here should match the number of columns in x_con used for training the model.
+Get point-estimates of prognostic effect
 }

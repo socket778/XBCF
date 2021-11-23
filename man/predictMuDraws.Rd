@@ -2,8 +2,7 @@
 % Please edit documentation in R/predict.XBCF.R
 \name{predictMuDraws}
 \alias{predictMuDraws}
-\title{predictMuDraws provides predicted values of prognostic effect a*mu(x_con,pihat) from each post-burnin draw, given input matrix x_mod and pihat.
-The number of columns in x_con here should match the number of columns in x_con used for training the model.}
+\title{Get post-burnin draws from trained model (prognostic term only)}
 \usage{
 predictMuDraws(model, x_con, pihat = NULL, burnin = NULL)
 }
@@ -20,6 +19,5 @@ predictMuDraws(model, x_con, pihat = NULL, burnin = NULL)
 A matrix with a set of draws of predicted prognostic effect estimates; rows are datapoints, columns are iterations.
 }
 \description{
-predictMuDraws provides predicted values of prognostic effect a*mu(x_con,pihat) from each post-burnin draw, given input matrix x_mod and pihat.
-The number of columns in x_con here should match the number of columns in x_con used for training the model.
+Get post-burnin draws from trained model (prognostic term only)
 }

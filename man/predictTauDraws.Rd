@@ -2,8 +2,7 @@
 % Please edit documentation in R/predict.XBCF.R
 \name{predictTauDraws}
 \alias{predictTauDraws}
-\title{predictTauDraws provides predicted values of treatment effect (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrix x_mod.
-The number of columns in x_mod here should match the number of columns in x_mod used for training the model.}
+\title{Get post-burnin draws from trained model (treatment term only)}
 \usage{
 predictTauDraws(model, x_mod, burnin = NULL)
 }
@@ -18,6 +17,5 @@ predictTauDraws(model, x_mod, burnin = NULL)
 A matrix with a set of draws of predicted treatment effect estimates; rows are datapoints, columns are iterations.
 }
 \description{
-predictTauDraws provides predicted values of treatment effect (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrix x_mod.
-The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+Get post-burnin draws from trained model (treatment term only)
 }

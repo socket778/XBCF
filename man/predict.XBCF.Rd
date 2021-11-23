@@ -2,8 +2,7 @@
 % Please edit documentation in R/predict.XBCF.R
 \name{predict.XBCF}
 \alias{predict.XBCF}
-\title{predict.XBCF provides predicted values of a*mu(x_con, pihat) and (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrices x_con, x_mod and pihat.
-The number of columns in matrices should match the number of columns in matrices used for training the model.}
+\title{Get post-burnin draws from trained model}
 \usage{
 \method{predict}{XBCF}(model, x_con, x_mod = x_con, pihat = NULL, burnin = NULL)
 }
@@ -22,6 +21,5 @@ The number of columns in matrices should match the number of columns in matrices
 A list with two matrices. Each matrix corresponds to a set of draws of predicted values; rows are datapoints, columns are iterations.
 }
 \description{
-predict.XBCF provides predicted values of a*mu(x_con, pihat) and (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrices x_con, x_mod and pihat.
-The number of columns in matrices should match the number of columns in matrices used for training the model.
+Get post-burnin draws from trained model
 }

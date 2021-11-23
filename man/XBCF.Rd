@@ -2,7 +2,7 @@
 % Please edit documentation in R/XBCF.R
 \name{XBCF}
 \alias{XBCF}
-\title{This function runs the warm-start model on the given data.}
+\title{Run XBCF model on data}
 \usage{
 XBCF(
   y,
@@ -87,5 +87,5 @@ XBCF(
 A fit file, which contains the draws from the model as well as parameter draws at each sweep.
 }
 \description{
-This function runs the warm-start model on the given data.
+Run XBCF model on data
 }

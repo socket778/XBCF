@@ -1,4 +1,4 @@
-#' This function allows to get individual level treatment estimates.
+#' Get point-estimates of treatment effect (in sample)
 #'
 #' @param fit An XBCF fit object.
 #'
@@ -13,7 +13,7 @@ getTaus <- function(fit) {
     return(tauhats)
 }
 
-#' This function allows to get individual level prognostic estimates.
+#' Get point-estimates of prognostic effect (in sample)
 #'
 #' @param fit An XBCF fit object.
 #'

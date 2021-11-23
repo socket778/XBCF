@@ -1,5 +1,4 @@
-#' predict.XBCF provides predicted values of a*mu(x_con, pihat) and (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrices x_con, x_mod and pihat.
-#' The number of columns in matrices should match the number of columns in matrices used for training the model.
+#' Get post-burnin draws from trained model
 #'
 #' @param model A trained XBCF model.
 #' @param x_con An input matrix for the prognostic term of size n by p1. Column order matters: continuos features should all bgo before of categorical.
@@ -75,8 +74,7 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     return(obj)
 }
 
-#' predictTauDraws provides predicted values of treatment effect (b1-b0)*tau(x_mod) from each post-burnin iteration, given input matrix x_mod.
-#' The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+#' Get post-burnin draws from trained model (treatment term only)
 #'
 #' @param model A trained XBCF model.
 #' @param x_mod An input matrix for the treatment term of size n by p2. Column order matters: continuos features should all go before categorical.
@@ -118,8 +116,7 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
     return(tauhat.draws)
 }
 
-#' predictTaus averages predicted values of treatment effect (b1-b0)*tau(x_mod), given input matrix x_mod.
-#' The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+#' Get point-estimates of treatment effect
 #'
 #' @param model A trained XBCF model.
 #' @param x_mod An input matrix for the treatment term of size n by p2. Column order matters: continuos features should all go before categorical.
@@ -163,8 +160,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
     return(tauhats)
 }
 
-#' predictMuDraws provides predicted values of prognostic effect a*mu(x_con,pihat) from each post-burnin draw, given input matrix x_mod and pihat.
-#' The number of columns in x_con here should match the number of columns in x_con used for training the model.
+#' Get post-burnin draws from trained model (prognostic term only)
 #'
 #' @param model A trained XBCF model.
 #' @param x_con An input matrix for the treatment term of size n by p1. Column order matters: continuos features should all go before categorical.
@@ -226,8 +222,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     return(muhat.draws)
 }
 
-#' predictMus averages predicted values of prognostic effect a*mu(x_con,pihat), given input matrix x_mod and pihat.
-#' The number of columns in x_con here should match the number of columns in x_con used for training the model.
+#' Get point-estimates of prognostic effect
 #'
 #' @param model A trained XBCF model.
 #' @param x_con An input matrix for the treatment term of size n by p1. Column order matters: continuos features should all go before categorical.

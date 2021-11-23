@@ -1,4 +1,4 @@
-#' This function runs the warm-start model on the given data.
+#' Run XBCF model on data
 #'
 #' @param y An array of outcome variables of length n (expected to be continuos).
 #' @param z A binary array of treatment assignments of length n.

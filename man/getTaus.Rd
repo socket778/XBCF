@@ -2,7 +2,7 @@
 % Please edit documentation in R/getters.R
 \name{getTaus}
 \alias{getTaus}
-\title{This function allows to get individual level treatment estimates.}
+\title{Get point-estimates of treatment effect (in sample)}
 \usage{
 getTaus(fit)
 }
@@ -13,5 +13,5 @@ getTaus(fit)
 An array of treatment effect point estimates.
 }
 \description{
-This function allows to get individual level treatment estimates.
+Get point-estimates of treatment effect (in sample)
 }

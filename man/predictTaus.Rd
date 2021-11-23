@@ -2,8 +2,7 @@
 % Please edit documentation in R/predict.XBCF.R
 \name{predictTaus}
 \alias{predictTaus}
-\title{predictTaus averages predicted values of treatment effect (b1-b0)*tau(x_mod), given input matrix x_mod.
-The number of columns in x_mod here should match the number of columns in x_mod used for training the model.}
+\title{Get point-estimates of treatment effect}
 \usage{
 predictTaus(model, x_mod, burnin = NULL)
 }
@@ -18,6 +17,5 @@ predictTaus(model, x_mod, burnin = NULL)
 An array with point-estimates of treatment effect per datapoint in the given matrix.
 }
 \description{
-predictTaus averages predicted values of treatment effect (b1-b0)*tau(x_mod), given input matrix x_mod.
-The number of columns in x_mod here should match the number of columns in x_mod used for training the model.
+Get point-estimates of treatment effect
 }

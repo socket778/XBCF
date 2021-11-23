@@ -2,7 +2,7 @@
 % Please edit documentation in R/getters.R
 \name{getMus}
 \alias{getMus}
-\title{This function allows to get individual level prognostic estimates.}
+\title{Get point-estimates of prognostic effect (in sample)}
 \usage{
 getMus(fit)
 }
@@ -13,5 +13,5 @@ getMus(fit)
 An array of prognostic effect point estimates.
 }
 \description{
-This function allows to get individual level prognostic estimates.
+Get point-estimates of prognostic effect (in sample)
 }
