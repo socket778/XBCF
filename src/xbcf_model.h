@@ -46,7 +46,7 @@ public:
 
   void samplePars(std::unique_ptr<State> &state, std::vector<double> &suff_stat, std::vector<double> &theta_vector, double &prob_leaf);
 
-  void update_state(std::unique_ptr<State> &state);
+  void draw_sigma(std::unique_ptr<State> &state, size_t ind);
 
   void initialize_root_suffstat(std::unique_ptr<State> &state, std::vector<double> &suff_stat);
 

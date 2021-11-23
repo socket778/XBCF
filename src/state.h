@@ -87,6 +87,26 @@ public:
 
     //std::vector<double> precision_squared;
 
+    void update_residuals()
+    {
+        size_t index_trt = 0; // index of the current observation in the treatment group
+        size_t index_ctrl = 0; // index of the current observation in the control group
+
+        for (size_t i = 0; i < this->n_y; i++)
+        {
+            if (this->z[i] == 1)
+            {
+                this->full_residual_trt[index_trt] = (*this->y_std)[i] - this->a * this->mu_fit[i] - this->b_vec[1] * this->tau_fit[i];
+                index_trt++;
+            }
+            else
+            {
+                this->full_residual_ctrl[index_ctrl] = (*this->y_std)[i] - this->a * this->mu_fit[i] - this->b_vec[0] * this->tau_fit[i];
+                index_ctrl++;
+            }
+        }
+    }
+
     void update_sigma(double sigma)
     {
         this->sigma = sigma;

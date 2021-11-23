@@ -46,7 +46,8 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
     ////////////// Prognostic term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
     {
-      model_ps->update_state(state); // Draw Sigma -- the residual needed for the update is computed inside of the function
+      state->update_residuals(); // update residuals
+      model_ps->draw_sigma(state, 0); // draw sigmas (and update them in the state obj)
 
       // store sigma draws
       sigma0_draw_xinfo[sweeps][tree_ind] = state->sigma_vec[0]; // storing sigmas
@@ -91,8 +92,8 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
     ////////////// Treatment term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
     {
-      // Draw Sigma
-      model_trt->update_state(state);
+      state->update_residuals(); // update residuals
+      model_trt->draw_sigma(state, 1); // draw sigmas (and update them in the state obj)
 
       // store sigma draws
       sigma0_draw_xinfo[sweeps][state->num_trees_vec[0]+tree_ind] = state->sigma_vec[0]; // storing sigmas

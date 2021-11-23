@@ -81,39 +81,24 @@ void xbcfModel::samplePars(std::unique_ptr<State> &state, std::vector<double> &s
   return;
 }
 
-// updates sigmas
+// updates sigmas (new)
 // called from mcmc_loop_xbcf in xbcf_mcmc_loop.cpp
-void xbcfModel::update_state(std::unique_ptr<State> &state)
+void xbcfModel::draw_sigma(std::unique_ptr<State> &state, size_t ind)
 {
-  size_t index_trt = 0; // index of the current observation in the treatment group
-  size_t index_ctrl = 0; // index of the current observation in the control group
+  // computing both sigmas here due to structural complexity of splitting them
+  std::gamma_distribution<double> gamma_samp1((state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_trt) + s));
+  std::gamma_distribution<double> gamma_samp0((state->n_y - state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_ctrl) + s));
 
-  for (size_t i = 0; i < state->n_y; i++)
-  {
-    if (state->z[i] == 1)
-    {
-      state->full_residual_trt[index_trt] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i];
-      index_trt++;
-    }
-    else
-    {
-      state->full_residual_ctrl[index_ctrl] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i];
-      index_ctrl++;
-    }
+  // then we choose only one of them based on the group we are updating for
+  double sigma;
+  if(ind == 0) {
+    sigma = 1.0 / sqrt(gamma_samp1(state->gen));
+  } else {
+    sigma = 1.0 / sqrt(gamma_samp1(state->gen));
   }
 
-  // compute sigma1 for the treated group
-  std::gamma_distribution<double> gamma_samp1((state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_trt) + s));
-  double sigma1 = 1.0 / sqrt(gamma_samp1(state->gen));
-
-  // compute sigma0 for the control group
-  std::gamma_distribution<double> gamma_samp0((state->n_y - state->n_trt + kap) / 2.0, 2.0 / (sum_squared(state->full_residual_ctrl) + s));
-  double sigma0 = 1.0 / sqrt(gamma_samp0(state->gen));
-
-  //update sigma vector for the state
-  state->update_sigma(sigma0, 0);
-  state->update_sigma(sigma1, 1);
-  //state->update_precision_squared(sigma0, sigma1);
+  // update the corresponding value in the state object
+  state->update_sigma(sigma, ind);
   return;
 }
 
