@@ -92,7 +92,7 @@ void xbcfModel::draw_sigma(std::unique_ptr<State> &state, size_t ind)
   // then we choose only one of them based on the group we are updating for
   double sigma;
   if(ind == 0) {
-    sigma = 1.0 / sqrt(gamma_samp1(state->gen));
+    sigma = 1.0 / sqrt(gamma_samp0(state->gen));
   } else {
     sigma = 1.0 / sqrt(gamma_samp1(state->gen));
   }
