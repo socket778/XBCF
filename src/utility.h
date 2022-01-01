@@ -6,14 +6,17 @@
 #include "thread_pool.h"
 extern ThreadPool thread_pool;
 
-#ifndef SWIG
+// #ifndef SWIG
 #include <algorithm>
 #include <functional>
 #include <iterator>
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <numeric>
-#endif
+#include <armadillo>
+// #endif
+
+using namespace arma;
 
 template <typename T>
 void ini_matrix(matrix<T> &matrix, size_t N, size_t p)
@@ -143,5 +146,13 @@ double normal_density(double y, double mean, double var, bool take_log);
 bool is_non_zero(size_t x);
 
 size_t count_non_zero(std::vector<double> &vec);
+
+
+void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<std::vector<double>> &X_range);
+
+void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> z_std,
+                std::vector<std::vector<double>> &X_range);
+
+void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double theta, double tau);
 
 #endif

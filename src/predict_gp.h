@@ -17,15 +17,13 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     matrix<double> &a_xinfo,
                     // vector<vector<tree>> &trees_ps,
                     vector<vector<tree>> &trees_trt,
-                    // double no_split_penality,
                     std::unique_ptr<State> &state,
                     //std::unique_ptr<State> &state_trt,
                     // xbcfModel *model_ps,
                     xbcfModel *model_trt,
-                    // std::unique_ptr<X_struct> &x_struct_ps,
                     std::unique_ptr<X_struct> &x_struct_trt,
                     std::unique_ptr<X_struct> &xtest_struct_trt,
-                    // bool a_scaling,
-                    // bool b_scaling,
-                    matrix<double> &mu_fit_std
+                    matrix<double> &mu_fit_std,
+                    matrix<double> &yhats_test_xinfo,
+                    std::vector<std::vector<double>> X_range
                     );

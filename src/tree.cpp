@@ -1689,7 +1689,7 @@ size_t get_split_point(const double *Xpointer, matrix<size_t> &Xorder_std, size_
     return split_point;
 }
 
-void split_xorder_std_categorical_simplified(std::unique_ptr<gp_struct> &x_struct, matrix<size_t> &Xorder_left_std, 
+void split_xorder_std_categorical_simplified(std::unique_ptr<X_struct> &x_struct, matrix<size_t> &Xorder_left_std, 
 matrix<size_t> &Xorder_right_std, size_t split_var, size_t split_point, matrix<size_t> &Xorder_std, 
 std::vector<size_t> &X_counts_left, std::vector<size_t> &X_counts_right, 
 std::vector<size_t> &X_num_unique_left, std::vector<size_t> &X_num_unique_right, 
@@ -1822,7 +1822,7 @@ std::vector<size_t> &X_counts, size_t p_categorical)
     return;
 }
 
-void split_xorder_std_continuous_simplified(std::unique_ptr<gp_struct> &x_struct, matrix<size_t> &Xorder_left_std, matrix<size_t> &Xorder_right_std, size_t split_var, size_t split_point, matrix<size_t> &Xorder_std, size_t p_continuous)
+void split_xorder_std_continuous_simplified(std::unique_ptr<X_struct> &x_struct, matrix<size_t> &Xorder_left_std, matrix<size_t> &Xorder_right_std, size_t split_var, size_t split_point, matrix<size_t> &Xorder_std, size_t p_continuous)
 {
     // without model, state, don't update suff stats
 
@@ -1863,9 +1863,13 @@ void split_xorder_std_continuous_simplified(std::unique_ptr<gp_struct> &x_struct
     return;
 }
 
-void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_struct> &x_struct, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
-    matrix<size_t> &Xtestorder_std, std::unique_ptr<gp_struct> &xtest_struct, std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-    std::unique_ptr<State> &state, std::vector<bool> active_var, const size_t &p_categorical, const size_t &tree_ind, const double &theta, const double &tau)
+void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, 
+                                std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
+                                matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
+                                std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
+                                std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range,
+                                std::vector<bool> active_var, const size_t &p_categorical, 
+                                const size_t &tree_ind, const double &theta, const double &tau)
 {
     // gaussian process prediction from root
     // cout << "predict_from_root_gp" << endl;
@@ -1911,13 +1915,15 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
 
             if (p_categorical > 0)
             {
-                split_xorder_std_categorical_simplified(x_struct, Xorder_left_std, Xorder_right_std, this->v, split_point, Xorder_std, X_counts_left, X_counts_right, 
-                X_num_unique_left, X_num_unique_right, X_counts, p_categorical);
+                split_xorder_std_categorical_simplified(x_struct, Xorder_left_std, Xorder_right_std, this->v, split_point, 
+                                                        Xorder_std, X_counts_left, X_counts_right, 
+                                                        X_num_unique_left, X_num_unique_right, X_counts, p_categorical);
             }
 
             if (p_continuous > 0)
             {
-                split_xorder_std_continuous_simplified(x_struct, Xorder_left_std, Xorder_right_std, v, split_point, Xorder_std, p_continuous);
+                split_xorder_std_continuous_simplified(x_struct, Xorder_left_std, Xorder_right_std, v, split_point, 
+                                                        Xorder_std, p_continuous);
             }
 
         }
@@ -1928,14 +1934,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
                 // all test data goes to the right node
                 this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, active_var_right, p_categorical, tree_ind, theta, tau);
+                                            state, X_range, active_var_right, p_categorical, tree_ind, theta, tau);
                 return;
             }
             if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
                 // all test data goes to the left node
                 this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, active_var_left, p_categorical, tree_ind, theta, tau);
+                                            state, X_range, active_var_left, p_categorical, tree_ind, theta, tau);
                 return;
             }
 
@@ -1947,23 +1953,26 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
 
             if (p_categorical > 0)
             {
-                split_xorder_std_categorical_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, Xtestorder_std, Xtest_counts_left, Xtest_counts_right, Xtest_num_unique_left, Xtest_num_unique_right, Xtest_counts, p_categorical);
+                split_xorder_std_categorical_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, 
+                                                        Xtestorder_std, Xtest_counts_left, Xtest_counts_right, 
+                                                        Xtest_num_unique_left, Xtest_num_unique_right, Xtest_counts, p_categorical);
             }
             if (p_continuous > 0)
             {   
-                split_xorder_std_continuous_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, Xtestorder_std, p_continuous);
+                split_xorder_std_continuous_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, 
+                                                        Xtestorder_std, p_continuous);
             }
         }
 
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, active_var_left, p_categorical, tree_ind, theta, tau);
+                                    state, X_range, active_var_left, p_categorical, tree_ind, theta, tau);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, active_var_right, p_categorical, tree_ind, theta, tau);
+                                    state, X_range, active_var_right, p_categorical, tree_ind, theta, tau);
         // cout << "end rigth " << endl;
     }
     else {
@@ -1992,12 +2001,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
         for (size_t i = 0; i < Ntest; i++){
             for (size_t j = 0; j < p_continuous; j++){
                 if (active_var[j]){
-                    if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) > x_struct->X_range[j][1]){
+                    if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) > X_range[j][1]){
                         test_ind.push_back(Xtestorder_std[j][i]);
                         active_var_left[j] = false;
                         break;
                     }
-                    if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) < x_struct->X_range[j][0]){ 
+                    if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) < X_range[j][0]){ 
                         test_ind.push_back(Xtestorder_std[j][i]);
                         break;
                     }
@@ -2052,7 +2061,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
                 for (size_t i = 0; i < N; i++){
                     X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
                 }
-                // x_range[j_count] = x_struct->X_range[j][1] - x_struct->X_range[j][0];
+                // x_range[j_count] = x_struct->X_range[j][1] - x_struct->X_range[j][0]; // fixed range scale
+                // flexible range scale per leaf node
                 x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
 
                 split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
@@ -2070,8 +2080,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_s
         // cout << "get resid" << ", sweeps = " << sweeps << ", tree = " << tree_ind << ", N = " << N << ", Ntest = " << Ntest << ", resid = " << x_struct->resid[sweeps][tree_ind][train_ind[N-1]] << endl;
         mat resid(N, 1);
         for (size_t i = 0; i < N; i++){
-            // state->res
-            resid(i, 0) = x_struct->resid[sweeps][tree_ind][train_ind[i]] - this->theta_vector[0];
+            resid(i, 0) = state->residual[i] - this->theta_vector[0];
         }
 
         mat cov(N + Ntest, N + Ntest);

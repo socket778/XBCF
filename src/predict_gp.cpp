@@ -19,7 +19,8 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     std::unique_ptr<X_struct> &x_struct_trt,
                     std::unique_ptr<X_struct> &xtest_struct_trt,
                     matrix<double> &mu_fit_std,
-                    matrix<double> &yhats_test_xinfo
+                    matrix<double> &yhats_test_xinfo,
+                    std::vector<std::vector<double>> X_range
                     )
 {
     //cout << "size of Xorder std " << Xorder_std.size() << endl;
@@ -109,22 +110,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
 {
     // should be able to run in parallel
     cout << "predict with gaussian process" << endl;
-    // if (parallel && (nthread == 0))
-    // {
-    //     // if turn on parallel and do not sepicifiy number of threads
-    //     // use max - 1, leave one out
-    //     nthread = omp_get_max_threads() - 1;
-    // }
-
-    // if (parallel)
-    // {
-    //     omp_set_num_threads(nthread);
-    //     cout << "Running in parallel with " << nthread << " threads." << endl;
-    // }
-    // else
-    // {
-    //     cout << "Running with single thread." << endl;
-    // }
 
     // Size of data
     size_t N = X.n_rows;
@@ -218,6 +203,9 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
             n_trt++;
     }
 
+    // Get X_range
+    std::vector<std::vector<double>> X_range;
+    get_overlap(X_std, Xorder_std, z_std, X_range);
     
     // State settings for the prognostic term
     std::unique_ptr<State> state(new xbcfState(Xpointer, Xorder_std, N, n_trt, p, p, num_trees, p_categorical, p_categorical, 
@@ -242,7 +230,7 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     std::fill(active_var.begin(), active_var.end(), false);
 
     mcmc_loop_gp(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
-                b_xinfo, a_xinfo, *trees, state, model, x_struct, xtest_struct, mu_fit_std, yhats_test_xinfo);
+                b_xinfo, a_xinfo, *trees, state, model, x_struct, xtest_struct, mu_fit_std, yhats_test_xinfo, X_range);
 
     Rcpp::NumericMatrix yhats_test(N_test, num_sweeps);
     Matrix_to_NumericMatrix(yhats_test_xinfo, yhats_test);

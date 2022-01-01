@@ -1,8 +1,8 @@
 #! /bin/bash
 echo Building R
 cd ../../
-R CMD REMOVE XBART
-R CMD INSTALL XBART
-cd XBART/tests/
+R CMD REMOVE XBCF
+R CMD INSTALL XBCF
+cd XBCF/tests/
 echo Testing R
-Rscript test.R
+# Rscript test.R

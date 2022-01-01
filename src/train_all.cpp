@@ -1,5 +1,7 @@
 #include <ctime>
-#include <RcppArmadillo.h>
+// #include <RcppArmadillo.h>
+#include "Rcpp.h"
+#include <armadillo>
 #include "tree.h"
 #include "forest.h"
 #include <chrono>

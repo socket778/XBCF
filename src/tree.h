@@ -10,6 +10,7 @@
 #include "node_data.h"
 #include "X_struct.h"
 #include "json.h"
+#include <armadillo>
 
 //#include <armadillo>
 
@@ -154,9 +155,9 @@ public:
 
     void grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_std, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, Model *model, std::unique_ptr<X_struct> &x_struct, const size_t &sweeps, const size_t &tree_ind, bool update_theta, bool update_split_prob, bool grow_new_tree);
 
-    void predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<gp_struct> &x_struct, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
-    matrix<size_t> &Xtestorder_std, std::unique_ptr<gp_struct> &xtest_struct, std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-    std::unique_ptr<State> &state, std::vector<bool> active_var, const size_t &p_categorical, const double &theta, const double &tau);
+    void predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
+                            matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
+                            std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range, std::vector<bool> active_var, const size_t &p_categorical, const size_t &tree_ind, const double &theta, const double &tau);
     
     tree_p bn(double *x, matrix<double> &xi); //find Bottom Node, original BART version
 
