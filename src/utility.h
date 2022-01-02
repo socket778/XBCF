@@ -13,6 +13,7 @@ extern ThreadPool thread_pool;
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <numeric>
+#include "Rcpp.h"
 #include <armadillo>
 // #endif
 
@@ -154,5 +155,11 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
                 std::vector<std::vector<double>> &X_range);
 
 void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double theta, double tau);
+
+void rcpp_to_std2(arma::mat y, arma::mat X, arma::mat Xtest, std::vector<double> &y_std, double &y_mean, Rcpp::NumericMatrix &X_std, Rcpp::NumericMatrix &Xtest_std, matrix<size_t> &Xorder_std);
+
+void rcpp_to_std2(arma::mat X, arma::mat Xtest, Rcpp::NumericMatrix &X_std, Rcpp::NumericMatrix &Xtest_std, matrix<size_t> &Xorder_std);
+
+void std_to_rcpp(const matrix<double> &matrix_in, Rcpp::NumericMatrix &matrix_out);
 
 #endif

@@ -2087,9 +2087,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         get_rel_covariance(cov, X, x_range, theta, tau); 
         mat k = cov.submat(N, 0, N + Ntest - 1, N - 1); // cov[2:nrow(cov), 1]
 
-        // cout << "cov = " << cov.submat(0, 0, N - 1, N -1) << endl;
-        // mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));
-        mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1) + pow(x_struct->sigma[tree_ind], 2) / x_struct->num_trees * eye<mat>(N, N));
+        // Add diagonal term sigma^2 based on treated/control group
+        for (size_t i = 0; i < N; i++){
+            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / state->num_trees + (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / state->num_trees;
+        } 
+
+        mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));
         // cout << "Kinv = " << Kinv << endl;
         
         mat mu = this->theta_vector[0] + k * Kinv * resid;

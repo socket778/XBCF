@@ -2,9 +2,8 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include "XBCF_types.h"
-// #include <RcppArmadillo.h>
+#include <RcppArmadillo.h>
 #include <Rcpp.h>
-#include <armadillo>
 
 using namespace Rcpp;
 
@@ -14,8 +13,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // predict_gp
-Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, mat mu_fit, mat sigma0_draws, mat sigma1_draws, double theta, double tau, size_t p_categorical, bool verbose, bool parallel, bool set_random_seed, size_t random_seed);
-RcppExport SEXP _XBCF_predict_gp(SEXP ySEXP, SEXP zSEXP, SEXP XSEXP, SEXP XtestSEXP, SEXP tree_pntSEXP, SEXP mu_fitSEXP, SEXP sigma0_drawsSEXP, SEXP sigma1_drawsSEXP, SEXP thetaSEXP, SEXP tauSEXP, SEXP p_categoricalSEXP, SEXP verboseSEXP, SEXP parallelSEXP, SEXP set_random_seedSEXP, SEXP random_seedSEXP) {
+Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, mat mu_fit, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b_draws, double theta, double tau, size_t p_categorical, bool verbose, bool parallel, bool set_random_seed, size_t random_seed);
+RcppExport SEXP _XBCF_predict_gp(SEXP ySEXP, SEXP zSEXP, SEXP XSEXP, SEXP XtestSEXP, SEXP tree_pntSEXP, SEXP mu_fitSEXP, SEXP sigma0_drawsSEXP, SEXP sigma1_drawsSEXP, SEXP a_drawsSEXP, SEXP b_drawsSEXP, SEXP thetaSEXP, SEXP tauSEXP, SEXP p_categoricalSEXP, SEXP verboseSEXP, SEXP parallelSEXP, SEXP set_random_seedSEXP, SEXP random_seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,6 +26,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< mat >::type mu_fit(mu_fitSEXP);
     Rcpp::traits::input_parameter< mat >::type sigma0_draws(sigma0_drawsSEXP);
     Rcpp::traits::input_parameter< mat >::type sigma1_draws(sigma1_drawsSEXP);
+    Rcpp::traits::input_parameter< mat >::type a_draws(a_drawsSEXP);
+    Rcpp::traits::input_parameter< mat >::type b_draws(b_drawsSEXP);
     Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< size_t >::type p_categorical(p_categoricalSEXP);
@@ -34,7 +35,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< bool >::type set_random_seed(set_random_seedSEXP);
     Rcpp::traits::input_parameter< size_t >::type random_seed(random_seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(predict_gp(y, z, X, Xtest, tree_pnt, mu_fit, sigma0_draws, sigma1_draws, theta, tau, p_categorical, verbose, parallel, set_random_seed, random_seed));
+    rcpp_result_gen = Rcpp::wrap(predict_gp(y, z, X, Xtest, tree_pnt, mu_fit, sigma0_draws, sigma1_draws, a_draws, b_draws, theta, tau, p_categorical, verbose, parallel, set_random_seed, random_seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -172,7 +173,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_XBCF_predict_gp", (DL_FUNC) &_XBCF_predict_gp, 15},
+    {"_XBCF_predict_gp", (DL_FUNC) &_XBCF_predict_gp, 17},
     {"_XBCF_predict", (DL_FUNC) &_XBCF_predict, 2},
     {"_XBCF_r_to_json", (DL_FUNC) &_XBCF_r_to_json, 2},
     {"_XBCF_json_to_r", (DL_FUNC) &_XBCF_json_to_r, 1},
