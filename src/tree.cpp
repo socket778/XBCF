@@ -2089,7 +2089,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         // Add diagonal term sigma^2 based on treated/control group
         for (size_t i = 0; i < N; i++){
-            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / state->num_trees + (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / state->num_trees;
+            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / state->num_trees_vec[1] + (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / state->num_trees_vec[1];
         } 
 
         mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));

@@ -127,7 +127,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     size_t N_test = Xtest.n_rows;
     // number of continuous variables
     size_t p_continuous = p - p_categorical; // only work for continuous for now
-
     matrix<size_t> Xorder_std;
     ini_matrix(Xorder_std, N, p);
 
@@ -143,7 +142,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
 
     matrix<size_t> Xtestorder_std;
     ini_matrix(Xtestorder_std, N_test, p);
-
     // Create Xtestorder
     umat Xtestorder(Xtest.n_rows, Xtest.n_cols);
     for (size_t i = 0; i < Xtest.n_cols; i++)
@@ -202,7 +200,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     }
 
     ///////////////////////////////////////////////////////////////////
-    
 
     std::vector<double> sigma_vec(2); // vector of sigma0, sigma1
     sigma_vec[0] = 1.0;

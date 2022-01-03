@@ -45,14 +45,17 @@ x <- makeModelMatrixFromDataFrame(data.frame(x))
 x <- cbind(x[,1],x[,6],x[,-c(1,6)])
 
 # add pihat to the prognostic term matrix
-x1 <- cbind(pihat,x)
+# x1 <- cbind(pihat,x)
 
+# trim categorical values
+x = x[, 1:2]
 
 #### 2. XBCF
 
 # run XBCF
 t1 = proc.time()
-xbcf.fit = XBCF(y, z, x1, x, pcat_con = 5,  pcat_mod = 5)
+xbcf.fit = XBCF(as.matrix(y), as.matrix(z), x, x, pihat = as.matrix(pihat), pcat_con = 0,  pcat_mod = 0)
+pred = predictGP(xbcf.fit, x, x, x, as.matrix(y), as.matrix(z), tau = 1, pihat = pihat)
 t1 = proc.time() - t1
 
 # get treatment individual-level estimates

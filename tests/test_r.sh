@@ -5,4 +5,4 @@ R CMD REMOVE XBCF
 R CMD INSTALL XBCF
 cd XBCF/tests/
 echo Testing R
-# Rscript test.R
+Rscript test_xbcf_gp.R

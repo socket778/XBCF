@@ -288,20 +288,19 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 #' Get post-burnin draws from trained model with gaussian process on treatment forest (to extrapolate)
 #'
 #' @param model A trained XBCF model.
+#' @param x_con An input matrix for the prognostic term of size nt by p1 of the testing set. Column order matters: continuos features should all bgo before of categorical.
+#' @param x_mod An input matrix for the treatment term of size nt by p2 (default x_mod = x_con) of the testing set. Column order matters: continuos features should all go before categorical.
+#' @param xtrain_mod An input matrix for the treatment term of size nt by p2 (default x_mod = x_con) of the training set. Column order matters: continuos features should all go before categorical.
 #' @param y An array of outcome variables of length n (expected to be continuos).
 #' @param z A binary array of treatment assignments of length n.
-#' @param xtrain_con An input matrix for the prognostic term of size n by p1 of the training set. Column order matters: continuos features should all bgo before of categorical.
-#' @param x_con An input matrix for the prognostic term of size nt by p1 of the testing set. Column order matters: continuos features should all bgo before of categorical.
-#' @param xtrain_mod An input matrix for the treatment term of size nt by p2 (default x_mod = x_con) of the training set. Column order matters: continuos features should all go before categorical.
-#' @param x_mod An input matrix for the treatment term of size nt by p2 (default x_mod = x_con) of the testing set. Column order matters: continuos features should all go before categorical.
 #' @param pihat An array of propensity score estimates (default is NULL). In the default case propensity scores are estimated using nnet function.
 #' @param burnin The number of burn-in iterations to discard from prediction (the default value is taken from the trained model).
 #'
 #' @return A list with two matrices. Each matrix corresponds to a set of draws of predicted values; rows are datapoints, columns are iterations.
 #' @export
-predict.XBCF.GP <- function(model, y, z, xtrain_con, x_con, xtrain_mod = xtrain_con, x_mod=x_con, 
-                            theta = 1, tau = NULL, pihat=NULL, burnin=NULL, verbose = FALSE, 
-                            parallel = TRUE, set_random_seed = FALSE, random_seed = 0) {
+predictGP <- function(model, x_con, x_mod=x_con, xtrain_mod, y, z, 
+                    theta = 1, tau = NULL, pihat=NULL, burnin=NULL, verbose = FALSE, 
+                    parallel = TRUE, set_random_seed = FALSE, random_seed = 0) {
 
     if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix, try to convert type.\n")
@@ -310,6 +309,19 @@ predict.XBCF.GP <- function(model, y, z, xtrain_con, x_con, xtrain_mod = xtrain_
     if(!("matrix" %in% class(x_mod))) {
         cat("Msg: input x_mod is not a matrix, try to convert type.\n")
         x_mod = as.matrix(x_mod)
+    }
+
+    if(!("matrix" %in% class(xtrain_mod))) {
+        cat("Msg: input x_mod is not a matrix, try to convert type.\n")
+        xtrain_mod = as.matrix(xtrain_mod)
+    }
+    if(!("matrix" %in% class(z))){
+        cat("Msg: input z is not a matrix, try to convert type.\n")
+        z = as.matrix(z)
+    }
+    if(!("matrix" %in% class(y))){
+        cat("Msg: input y is not a matrix, try to convert type.\n")
+        y = as.matrix(y)
     }
 
     if(ncol(x_con) != model$input_var_count$x_con) {
@@ -350,7 +362,8 @@ predict.XBCF.GP <- function(model, y, z, xtrain_con, x_con, xtrain_mod = xtrain_
     # change this to predict.gp
     # model$sigma0_draws, sigma1_draws
     obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, obj1$predicted_values,
-                model$sigma0_draws, model$sigma1_draws, theta, tau, model$model_params$p_categorical_trt,
+                model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b_draws,
+                theta, tau, model$model_params$p_categorical_trt,
                 verbose, parallel, set_random_seed, random_seed)
 
     sweeps <- ncol(model$tauhats)
