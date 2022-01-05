@@ -1,74 +1,53 @@
-# simple demonstration of XBCF with default parameters
 library(XBCF)
-library(dbarts)
 
-#### 1. DATA GENERATION PROCESS
-n = 5000 # number of observations
-# set seed here
-# set.seed(1)
+n = 500
+nt = 500
+A = rbinom((n+nt), 1, 0.5)
+# small non-overlap
+mu1 = 1; mu2 = 2; p = 0.5
+# substantial non-overlap
+mu1 = 1; m3 = 3; p = 0.6
 
-# generate dcovariates
-x1 = rnorm(n)
-x2 = rbinom(n,1,0.2)
-x3 = sample(1:3,n,replace=TRUE,prob = c(0.1,0.6,0.3))
-x4 = rnorm(n)
-x5 = rbinom(n,1,0.7)
-x = cbind(x1,x2,x3,x4,x5)
+x1 = rnorm(n + nt, mean = A*mu1 + (1-A)*0, 1)
+x2 = rnorm(n + nt, mean = A*mu2 + (1-A)*2, 1)
+x3 = rbinom(n + nt, 1, p = A*p + (1-A)*0.4)
+x = cbind(x1, x2, x3)
+# model1 
+y1 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*1, 1)
+y0 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*0, 1)
+y = A*y1 + (1-A)*y0
+# model2
+# t = 1; c = 0
+# y1 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*t + exp(1.4-x2*t) + x2*x3 - 1.2*x3 - 2*x3*t + 2*t, 1)
+# y0 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*c + exp(1.4-x2*c) + x2*x3 - 1.2*x3 - 2*x3*c + 2*c, 1)
+# y = A*y1 + (1-A)*y0
+# propensity score?
+# pihat = NULL
+sink("/dev/null")
+fitz = nnet::nnet(A ~.,data = x, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+sink() # close the stream
+pihat = fitz$fitted.values
 
-# define treatment effects
-tau = 2 + 0.5*x[,4]*(2*x[,5]-1)
+ytrain = y[1:n]; ytest = y[(n+1):(n+nt)]
+ztrain = A[1:n]; ztest = A[(n+1):(n+nt)]
+pihat_tr = pihat[1:n]; pihat_te = pihat[(n+1):(n+nt)]
+xtrain = x[1:n,]; xtest = x[(n+1):(n+nt),]
 
-## define prognostic function (RIC)
-mu = function(x){
-  lev = c(-0.5,0.75,0)
-  result = 1 + x[,1]*(2*x[,2] - 2*(1-x[,2])) + lev[x3]
-  return(result)
-}
 
-# compute propensity scores and treatment assignment
-pi = pnorm(-0.5 + mu(x) - x[,2] + 0.*x[,4],0,3)
-#hist(pi,100)
-z = rbinom(n,1,pi)
-
-# generate outcome variable
-Ey = mu(x) + tau*z
-sig = 0.25*sd(Ey)
-y = Ey + sig*rnorm(n)
-
-# If you didn't know pi, you would estimate it here
-pihat = pi
-
-# matrix prep
-x <- data.frame(x)
-x[,3] <- as.factor(x[,3])
-x <- makeModelMatrixFromDataFrame(data.frame(x))
-x <- cbind(x[,1],x[,6],x[,-c(1,6)])
-
-# add pihat to the prognostic term matrix
-# x1 <- cbind(pihat,x)
-
-# trim categorical values
-x = x[, 1:2]
-
-#### 2. XBCF
 
 # run XBCF
 t1 = proc.time()
-xbcf.fit = XBCF(as.matrix(y), as.matrix(z), x, x, pihat = as.matrix(pihat), pcat_con = 0,  pcat_mod = 0)
-pred.gp = predictGP(xbcf.fit, x, x, x, as.matrix(y), as.matrix(z), tau = 1, pihat = pihat, verbose = FALSE)
-pred = predict.XBCF(xbcf.fit, x, x, pihat = pihat)
+xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, pihat = pihat_tr, pcat_con = 1,  pcat_mod = 1)
+pred.gp = predictGP(xbcf.fit, xtest, xtest, xtrain, as.matrix(ytrain), as.matrix(ztrain), 
+                    tau = 1, pihat = pihat_te, verbose = FALSE)
+# pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
 t1 = proc.time() - t1
 
-# get treatment individual-level estimates
-tauhats <- getTaus(xbcf.fit)
+pred = predict.XBCF(xbcf.fit, xtest, xtest, pihat = pihat_te)
 tauhats.pred <- rowMeans(pred$taudraws)
 tauhats.gp <- rowMeans(pred.gp$taudraws)
 
-# main model parameters can be retrieved below
-#print(xbcf.fit$model_params)
-
-# compare results to inference
-plot(tau, tauhats.pred); abline(0,1);
-points(tau, tauhats.gp, col = 'red')
-print(paste0("xbcf RMSE: ", sqrt(mean((tauhats - tau)^2))))
-print(paste0("xbcf runtime: ", round(as.list(t1)$elapsed,2)," seconds"))
+# true tau?
+tau = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
+cat('True ATE:, ', round(mean(tau), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
+    ', XBCF tau: ', round(mean(tauhats.pred), 3))
