@@ -40,12 +40,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // predict
-Rcpp::List predict(arma::mat X, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt);
+Rcpp::List predict(mat X, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt);
 RcppExport SEXP _XBCF_predict(SEXP XSEXP, SEXP tree_pntSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< mat >::type X(XSEXP);
     Rcpp::traits::input_parameter< Rcpp::XPtr<std::vector<std::vector<tree>>> >::type tree_pnt(tree_pntSEXP);
     rcpp_result_gen = Rcpp::wrap(predict(X, tree_pnt));
     return rcpp_result_gen;
@@ -127,15 +127,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // XBCF_cpp
-Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z, size_t num_sweeps, size_t burnin, size_t max_depth, size_t n_min, size_t num_cutpoints, double no_split_penality, size_t mtry_pr, size_t mtry_trt, size_t p_categorical_pr, size_t p_categorical_trt, size_t num_trees_pr, double alpha_pr, double beta_pr, double tau_pr, double kap_pr, double s_pr, bool pr_scale, size_t num_trees_trt, double alpha_trt, double beta_trt, double tau_trt, double kap_trt, double s_trt, bool trt_scale, bool verbose, bool parallel, bool set_random_seed, size_t random_seed, bool sample_weights_flag, bool a_scaling, bool b_scaling);
+Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z, size_t num_sweeps, size_t burnin, size_t max_depth, size_t n_min, size_t num_cutpoints, double no_split_penality, size_t mtry_pr, size_t mtry_trt, size_t p_categorical_pr, size_t p_categorical_trt, size_t num_trees_pr, double alpha_pr, double beta_pr, double tau_pr, double kap_pr, double s_pr, bool pr_scale, size_t num_trees_trt, double alpha_trt, double beta_trt, double tau_trt, double kap_trt, double s_trt, bool trt_scale, bool verbose, bool parallel, bool set_random_seed, size_t random_seed, bool sample_weights_flag, bool a_scaling, bool b_scaling);
 RcppExport SEXP _XBCF_XBCF_cpp(SEXP ySEXP, SEXP XSEXP, SEXP X_tauSEXP, SEXP zSEXP, SEXP num_sweepsSEXP, SEXP burninSEXP, SEXP max_depthSEXP, SEXP n_minSEXP, SEXP num_cutpointsSEXP, SEXP no_split_penalitySEXP, SEXP mtry_prSEXP, SEXP mtry_trtSEXP, SEXP p_categorical_prSEXP, SEXP p_categorical_trtSEXP, SEXP num_trees_prSEXP, SEXP alpha_prSEXP, SEXP beta_prSEXP, SEXP tau_prSEXP, SEXP kap_prSEXP, SEXP s_prSEXP, SEXP pr_scaleSEXP, SEXP num_trees_trtSEXP, SEXP alpha_trtSEXP, SEXP beta_trtSEXP, SEXP tau_trtSEXP, SEXP kap_trtSEXP, SEXP s_trtSEXP, SEXP trt_scaleSEXP, SEXP verboseSEXP, SEXP parallelSEXP, SEXP set_random_seedSEXP, SEXP random_seedSEXP, SEXP sample_weights_flagSEXP, SEXP a_scalingSEXP, SEXP b_scalingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X_tau(X_tauSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
+    Rcpp::traits::input_parameter< mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< mat >::type X_tau(X_tauSEXP);
+    Rcpp::traits::input_parameter< mat >::type z(zSEXP);
     Rcpp::traits::input_parameter< size_t >::type num_sweeps(num_sweepsSEXP);
     Rcpp::traits::input_parameter< size_t >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< size_t >::type max_depth(max_depthSEXP);

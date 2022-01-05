@@ -10,9 +10,10 @@
 #include "json_io.h"
 #include "xbcf_model.h"
 
+using namespace arma;
 
 // [[Rcpp::export]]
-Rcpp::List predict(arma::mat X,
+Rcpp::List predict(mat X,
                         Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt)
 {
 

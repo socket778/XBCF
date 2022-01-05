@@ -55,16 +55,20 @@ x = x[, 1:2]
 # run XBCF
 t1 = proc.time()
 xbcf.fit = XBCF(as.matrix(y), as.matrix(z), x, x, pihat = as.matrix(pihat), pcat_con = 0,  pcat_mod = 0)
-pred = predictGP(xbcf.fit, x, x, x, as.matrix(y), as.matrix(z), tau = 1, pihat = pihat)
+pred.gp = predictGP(xbcf.fit, x, x, x, as.matrix(y), as.matrix(z), tau = 1, pihat = pihat, verbose = FALSE)
+pred = predict.XBCF(xbcf.fit, x, x, pihat = pihat)
 t1 = proc.time() - t1
 
 # get treatment individual-level estimates
 tauhats <- getTaus(xbcf.fit)
+tauhats.pred <- rowMeans(pred$taudraws)
+tauhats.gp <- rowMeans(pred.gp$taudraws)
 
 # main model parameters can be retrieved below
 #print(xbcf.fit$model_params)
 
 # compare results to inference
-plot(tau, tauhats); abline(0,1)
+plot(tau, tauhats.pred); abline(0,1);
+points(tau, tauhats.gp, col = 'red')
 print(paste0("xbcf RMSE: ", sqrt(mean((tauhats - tau)^2))))
 print(paste0("xbcf runtime: ", round(as.list(t1)$elapsed,2)," seconds"))

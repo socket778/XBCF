@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace chrono;
+using namespace arma;
 
 //--------------------
 // node id
@@ -1868,7 +1869,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                                 matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
                                 std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range,
-                                std::vector<bool> active_var, const size_t &p_categorical, 
+                                std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, const size_t &p_categorical, 
                                 const size_t &tree_ind, const double &theta, const double &tau)
 {
     // gaussian process prediction from root
@@ -1934,14 +1935,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 // all test data goes to the right node
                 this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, X_range, active_var_right, p_categorical, tree_ind, theta, tau);
+                                            state, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
                 return;
             }
             if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
                 // all test data goes to the left node
                 this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, X_range, active_var_left, p_categorical, tree_ind, theta, tau);
+                                            state, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
                 return;
             }
 
@@ -1967,12 +1968,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, X_range, active_var_left, p_categorical, tree_ind, theta, tau);
+                                    state, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, X_range, active_var_right, p_categorical, tree_ind, theta, tau);
+                                    state, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
         // cout << "end rigth " << endl;
     }
     else {
@@ -1981,11 +1982,11 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             throw;
         }
         // assign mu 
-        for (size_t i = 0; i < N; i++){
-            (*(x_struct->data_pointers[tree_ind][Xorder_std[0][i]]))[0] = this->theta_vector[0];
-        }
+        // for (size_t i = 0; i < N; i++){
+        //     (*(x_struct->data_pointers[tree_ind][Xorder_std[0][i]])) = &this->theta_vector;
+        // }
         for (size_t i = 0; i < Ntest; i++){
-            (*(xtest_struct->data_pointers[tree_ind][Xtestorder_std[0][i]]))[0] = this->theta_vector[0];
+            yhats_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
         }
         
         // construct covariance matrix
@@ -2101,10 +2102,10 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         mat rnorm(Ntest , 1);
         // for (size_t i = 0; i < Ntest; i++) { rnorm(i, 0) = normal_samp(x_struct->gen); }
 
-        // mat L = arma::chol(Sig, "lower");
+        // mat L = chol(Sig, "lower");
         // mat mu_pred = mu + L * rnorm;
         for (size_t i = 0; i < Ntest; i++){
-            (*(xtest_struct->data_pointers[tree_ind][test_ind[i]]))[0] = mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen) - this->theta_vector[0];
+            yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen) - this->theta_vector[0];
         }
     }
 

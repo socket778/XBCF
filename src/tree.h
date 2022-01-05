@@ -27,7 +27,7 @@ void calcSuffStat_continuous(std::vector<double> &temp_suff_stat, std::vector<si
 //BART likelihood function
 //--------------------------------------------------
 //generate a vector of integers
-// arma::uvec range(size_t start, size_t end); Removed
+// uvec range(size_t start, size_t end); Removed
 
 //--------------------------------------------------
 //info contained in a node, used by input operator
@@ -157,7 +157,7 @@ public:
 
     void predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                             matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                            std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range, std::vector<bool> active_var, const size_t &p_categorical, const size_t &tree_ind, const double &theta, const double &tau);
+                            std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range, std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, const size_t &p_categorical, const size_t &tree_ind, const double &theta, const double &tau);
     
     tree_p bn(double *x, matrix<double> &xi); //find Bottom Node, original BART version
 

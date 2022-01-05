@@ -9,6 +9,7 @@
 #include "X_struct.h"
 #include "xbcf_mcmc_loop.h"
 #include "utility.h"
+#include "utility_rcpp.h"
 
 using namespace std;
 using namespace chrono;
@@ -24,7 +25,7 @@ using namespace arma;
 
 // FUNCTION arma_to_std (instance 1)
 // transfers data from an armadillo matrix object (column 0) to an std vector object
-void arma_to_std(const arma::mat &matrix_in, std::vector<double> &vector_out)
+void arma_to_std(const mat &matrix_in, std::vector<double> &vector_out)
 {
     size_t dim = matrix_in.n_rows;
 
@@ -37,7 +38,7 @@ void arma_to_std(const arma::mat &matrix_in, std::vector<double> &vector_out)
 }
 
 // transfers data from an armadillo matrix object (column 0) to an std vector object
-void arma_to_std(const arma::mat &matrix_in, std::vector<size_t> &vector_out)
+void arma_to_std(const mat &matrix_in, std::vector<size_t> &vector_out)
 {
     size_t dim = matrix_in.n_rows;
 
@@ -51,7 +52,7 @@ void arma_to_std(const arma::mat &matrix_in, std::vector<size_t> &vector_out)
 
 // FUNCTION arma_to_rcpp (instance 1)                    ?? Rcpp matrix or std matrix ??
 // transfers data from an armadillo matrix object to an Rcpp matrix object
-void arma_to_rcpp(const arma::mat &matrix_in, Rcpp::NumericMatrix &matrix_out)
+void arma_to_rcpp(const mat &matrix_in, Rcpp::NumericMatrix &matrix_out)
 {
     size_t dim_x = matrix_in.n_rows;
     size_t dim_y = matrix_in.n_cols;
@@ -69,15 +70,15 @@ void arma_to_rcpp(const arma::mat &matrix_in, Rcpp::NumericMatrix &matrix_out)
 
 // FUNCTION arma_to_std_ordered
 // transfers data from an armadillo matrix object to an std matrix object with indeces [carries the pre-sorted features]
-void arma_to_std_ordered(const arma::mat &matrix_in, matrix<size_t> &matrix_ordered_std)
+void arma_to_std_ordered(const mat &matrix_in, matrix<size_t> &matrix_ordered_std)
 {
     size_t dim_x = matrix_in.n_rows;
     size_t dim_y = matrix_in.n_cols;
 
-    arma::umat matrix_ordered(dim_x, dim_y);
+    umat matrix_ordered(dim_x, dim_y);
     for (size_t i = 0; i < dim_y; i++)
     {
-        matrix_ordered.col(i) = arma::sort_index(matrix_in.col(i));
+        matrix_ordered.col(i) = sort_index(matrix_in.col(i));
     }
 
     for (size_t i = 0; i < dim_x; i++)
@@ -118,7 +119,7 @@ double compute_mean(const std::vector<double> &vec)
 //                     num_trees,
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::export]]
-Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,             // responses vec y, covariates mat x, treatment assignment vec z
+Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec y, covariates mat x, treatment assignment vec z
                     size_t num_sweeps, size_t burnin = 1,                               // burnin is the # of burn-in sweeps
                     size_t max_depth = 1, size_t n_min = 5,                             // n_min is the minimum node size
                     size_t num_cutpoints = 1,                                           // # of adaptive cutpoints considered at each split for cont variables
@@ -178,11 +179,11 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
         COUT << "Sample " << mtry_trt << " out of " << p_trt << " variables when grow each tree." << endl;
     }
 
-    arma::umat Xorder(X.n_rows, X.n_cols);
+    umat Xorder(X.n_rows, X.n_cols);
     matrix<size_t> Xorder_std;
     ini_matrix(Xorder_std, N, p_pr);
 
-    arma::umat Xorder_tau(X_tau.n_rows, X_tau.n_cols);
+    umat Xorder_tau(X_tau.n_rows, X_tau.n_cols);
     matrix<size_t> Xorder_tau_std;
     ini_matrix(Xorder_tau_std, N, p_trt);
 

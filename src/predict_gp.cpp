@@ -3,7 +3,9 @@
 #include "predict_gp.h"
 // #include "train_all.cpp"
 #include "utility.h"
+#include "utility_rcpp.h"
 
+using namespace arma;
 
 void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau_std,
                     const double *X_tau_std, const double *Xtest_tau_std,
@@ -62,6 +64,12 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
         ////////////// Treatment term loop
         for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
         {
+            if (verbose == true)
+            {
+                COUT << "--------------------------------" << endl;
+                COUT << "number of trees " << tree_ind << endl;
+                COUT << "--------------------------------" << endl;
+            }
             // state->update_residuals(); // update residuals
             state->update_sigma(sigma0_draw_xinfo[sweeps][state->num_trees_vec[0] + tree_ind], 0);
             state->update_sigma(sigma1_draw_xinfo[sweeps][state->num_trees_vec[0] + tree_ind], 1);
@@ -90,21 +98,15 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             // assign predicted values to data_pointers
             trees_trt[sweeps][tree_ind].predict_from_root_gp(Xorder_tau_std, x_struct_trt, x_struct_trt->X_counts, x_struct_trt->X_num_unique, 
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
-            state, X_range, active_var, state->p_categorical, tree_ind, theta, tau);
+            state, X_range, active_var, yhats_test_xinfo[sweeps], state->p_categorical, tree_ind, theta, tau);
             
             // update data pointers and state_sweep
             for (size_t i = 0; i < state->tau_fit.size(); i++)
             {
                 bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, i, state->p, Xorder_tau_std[0].size());
-                (*(x_struct_trt->data_pointers[tree_ind][i]))[0] = bn->theta_vector[0];
+                (*(x_struct_trt->data_pointers[tree_ind][i])) = bn->theta_vector;
                 state->tau_fit[i] += (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
             }
-
-            // assign xtest pointer to yhats_test_info
-            for (size_t i = 0; i < Xtestorder_tau_std[0].size(); i++){
-                yhats_test_xinfo[sweeps][i] += (*(xtest_struct_trt->data_pointers[tree_ind][i]))[0];
-            }
-
         }
     }
 
