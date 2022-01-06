@@ -92,7 +92,6 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
                 }
             }
-
             std::fill(active_var.begin(), active_var.end(), false);
 
             // assign predicted values to data_pointers
@@ -104,7 +103,7 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             for (size_t i = 0; i < state->tau_fit.size(); i++)
             {
                 bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, i, state->p, Xorder_tau_std[0].size());
-                (*(x_struct_trt->data_pointers[tree_ind][i])) = bn->theta_vector;
+                x_struct_trt->data_pointers[tree_ind][i] = &bn->theta_vector;
                 state->tau_fit[i] += (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
             }
         }

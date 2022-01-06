@@ -2113,6 +2113,10 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // mat mu_pred = mu + L * rnorm;
         for (size_t i = 0; i < Ntest; i++){
             yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen) - this->theta_vector[0];
+            // if (abs(yhats_test_xinfo[test_ind[i]]) > 10){
+            //     cout << "yhat = " << yhats_test_xinfo[test_ind[i]] << ", mu = " << mu(i) << ", sig = " << pow(Sig(i, i), 0.5) << ", theta = " << this->theta_vector[0] << endl;
+            //     cout << "resid = " << resid(i) << endl;
+            // }
         }
     }
 

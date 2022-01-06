@@ -51,3 +51,11 @@ tauhats.gp <- rowMeans(pred.gp$taudraws)
 tau = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
 cat('True ATE:, ', round(mean(tau), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3))
+
+
+plot(pihat_te, tauhats.gp, col = 2)
+points(pihat_te, tauhats.pred)
+
+plot(xtest[ztest==0,1], tauhats.gp[ztest==0])
+points(xtest[ztest==1,1], tauhats.gp[ztest==1], col = 2)
+
