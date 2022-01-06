@@ -225,6 +225,7 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     // Get X_range
     std::vector<std::vector<double>> X_range;
     get_overlap(Xpointer, Xorder_std, z_std, X_range);
+    // cout << "X-range = " << X_range << endl;
     
     // State settings for the prognostic term
     std::unique_ptr<State> state(new xbcfState(Xpointer, Xorder_std, N, n_trt, p, p, num_trees_vec, p_categorical, p_categorical, 

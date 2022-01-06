@@ -274,44 +274,41 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     ini_matrix(X_range_ctrl, 2, p);
 
     // find the first and the last treated and control sample
-    bool treated { false };
-    bool control { false };
-    size_t ind = 0;
-    while ( (!treated) | (!control)) {
-        if ((z_std[ind] == 0) & (!control)){// control
-            control = true;
-            for (size_t i = 0; i < p; i++){
-                X_range_ctrl[i][0] = *(Xpointer + i * N + Xorder_std[i][ind]);
+    bool treated, control;
+    size_t ind, idx;
+    for (size_t i = 0; i < p; i++){
+        treated = true;
+        control = true;
+        ind = 0;
+        while ( treated | control  ){
+            idx = Xorder_std[i][ind];
+            if ((z_std[idx] == 0) & control){
+                X_range_ctrl[i][0] = *(Xpointer + i * N + idx);
+                control = false;
             }
-            
-        }
-        else if ((z_std[ind] == 1) & (!treated)){
-            treated = true;
-            for (size_t i = 0; i < p; i++){
-                X_range_trt[i][0] = *(Xpointer + i * N + Xorder_std[i][ind]);
+            else if ((z_std[idx] == 1) & treated){
+                X_range_trt[i][0] = *(Xpointer + i * N + idx);
+                treated = false;
             }
+            ind += 1;
         }
-        ind += 1;
+        treated = true;
+        control = true;
+        ind = N-1;
+        while ( treated | control  ){
+            idx = Xorder_std[i][ind];
+            if ((z_std[idx] == 0) & control){
+                X_range_ctrl[i][1] = *(Xpointer + i * N + idx);
+                control = false;
+            }
+            else if ((z_std[idx] == 1) & treated){
+                X_range_trt[i][1] = *(Xpointer + i * N + idx);
+                treated = false;
+            }
+            ind -= 1;
+        }
     }
-    treated = false;
-    control = false;
-    ind = N-1;
-    while ( (!treated) | (!control)) {
-        if ((z_std[ind] == 0) & (!control)){// control
-            control = true;
-            for (size_t i = 0; i < p; i++){
-                X_range_ctrl[i][1] = *(Xpointer + i * N + Xorder_std[i][ind]);
-            }
-        }
-        else if ((z_std[ind] == 1) & (!treated)){
-            treated = true;
-            for (size_t i = 0; i < p; i++){
-                X_range_trt[i][1] = *(Xpointer + i * N + Xorder_std[i][ind]);
-            }
-        }
-        ind -= 1;
-    }
-    
+
     // Get overlap
     for (size_t i = 0; i < p; i++){
         X_range[i][0] = (X_range_trt[i][0] > X_range_ctrl[i][0]) ? X_range_trt[i][0] : X_range_ctrl[i][0];
