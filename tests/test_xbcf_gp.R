@@ -17,10 +17,10 @@ y1 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*1, 1)
 y0 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*0, 1)
 y = A*y1 + (1-A)*y0
 # model2
-# t = 1; c = 0
-# y1 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*t + exp(1.4-x2*t) + x2*x3 - 1.2*x3 - 2*x3*t + 2*t, 1)
-# y0 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*c + exp(1.4-x2*c) + x2*x3 - 1.2*x3 - 2*x3*c + 2*c, 1)
-# y = A*y1 + (1-A)*y0
+t = 1; c = 0
+y1 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*t + exp(1.4-x2*t) + x2*x3 - 1.2*x3 - 2*x3*t + 2*t, 1)
+y0 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*c + exp(1.4-x2*c) + x2*x3 - 1.2*x3 - 2*x3*c + 2*c, 1)
+y = A*y1 + (1-A)*y0
 # propensity score?
 # pihat = NULL
 sink("/dev/null")

@@ -1996,6 +1996,9 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         std::vector<bool> active_var_left(p_continuous, false); // check which side the outliers are on for each active var
         std::vector<bool> active_var_right(p_continuous, false); // check which side the outliers are on for each active var
 
+
+        // TODO: out-of-range logic work differently on causal non-overlap problem
+        // data points can be out-of-range on both side after the cut on active variable (the cut itself is outside the overlap area)
         for (size_t i = 0; i < Ntest; i++){
             for (size_t j = 0; j < p_continuous; j++){
                 if (active_var[j]){
@@ -2015,14 +2018,18 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         // construct covariance matrix
         // TODO: consider categorical active variables
-        size_t p_active = std::accumulate(active_var_left.begin(), active_var_left.end(), 0);
-        p_active += std::accumulate(active_var_right.begin(), active_var_right.end(), 0);
+        size_t p_active = 0;
+        for (size_t i = 0; i < p_continuous; i++){
+            if (active_var_left[i] | active_var_right[i]){
+                p_active += 1;
+            }
+        }
+
         if (p_active == 0){
             // cout << "Warning: number of continuous active variable is 0. Sweep = " << sweeps << ", tree = " << tree_ind << endl;
             return;     
         }
        
-
         Ntest = test_ind.size();
         if (Ntest == 0){
             return;
@@ -2041,7 +2048,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             train_ind.resize(N);
             size_t i_count = 0;
             for (size_t i = 0; i < p_continuous; i++){
-                if (active_var_left[i]){
+                // if test points are out-of-range on both side
+                if (active_var_left[i] & active_var_right[i]){
+                      // uniformly get values on variable i
+                        for (size_t j = 0; j < N_active; j++){
+                            train_ind[i_count + j] = Xorder_std[i][j * Xorder_std[i].size() / N_active];
+                        }
+                }
+                else if (active_var_left[i]){
                     // get the smallest values (the first N_active obs in Xorder_std[i])
                     std::copy(Xorder_std[i].begin(), Xorder_std[i].begin() + N_active, train_ind.begin() + i_count);
                     i_count += N_active;
@@ -2085,7 +2099,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 j_count += 1;
             }
         }
-       
+        if (j_count < p_active){
+            cout << "j_count = " << j_count << ", p_active = " << p_active << ", active_var = " << active_var << endl;
+            cout << "active var left = " << active_var_left << ", right = " << active_var_right << endl;
+            throw;
+        }
+
         mat resid(N, 1);
         for (size_t i = 0; i < N; i++){
             resid(i, 0) = state->residual[i] - this->theta_vector[0];
