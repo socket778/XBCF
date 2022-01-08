@@ -24,6 +24,7 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     const double &theta, const double &tau
                     )
 {
+    cout << "y = " << (*state->y_std)[0] << endl; 
     //cout << "size of Xorder std " << Xorder_std.size() << endl;
     //cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
     if (state->parallel)
@@ -40,6 +41,10 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
     tree::tree_p bn; // pointer to bottom node
     std::vector<bool> active_var(state->p);
 
+    // init residual
+    for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
+        state->residual[i] = (*state->y_std)[i];
+    }
     for (size_t sweeps = 0; sweeps < state->num_sweeps; sweeps++)
     {
         //cout << "sweep: " << sweeps << endl;
@@ -50,20 +55,20 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             COUT << "--------------------------------" << endl;
         }
 
-        // update a, b0 and b1, although they are updated per tree, they are saved per forest.
-        state->a = a_xinfo[0][sweeps];
-        state->b_vec[0] = b_xinfo[0][sweeps];
-        state->b_vec[1] = b_xinfo[1][sweeps];
-
-        
         ///////////////////////////////////////////////////////////////////////////
         // Input predicted values from mu trees to replace mu_fit
         std::copy(mu_fit_std[sweeps].begin(), mu_fit_std[sweeps].end(), state->mu_fit.begin());
         ///////////////////////////////////////////////////////////////////////////
-
+        cout << "sweeps = " << sweeps << ", a = " << state->a << ", b = " << state->b_vec << ", mu_fit = " << state->mu_fit[0] << endl;
+        // // update residual
+        // for (size_t i = 0; i < Xorder_tau_std[0].size();i++) {
+        //     state->residual[i] -= state->a * mu_fit_std[sweeps][i];
+        // }
         ////////////// Treatment term loop
         for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
         {
+            cout << "sweep " << sweeps << ", tree " << tree_ind << " resid = " << state->residual[0] << ", tau_fit = " << state->tau_fit[0] << endl;
+
             if (verbose == true)
             {
                 COUT << "--------------------------------" << endl;
@@ -85,11 +90,13 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 if (state->z[i] == 1)
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]) ;
+                    state->residual[i] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i];
+                    // state->residual[i] += state->b_vec[1] * (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
                 }
                 else
                 {
                     state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
+                    // state->residual[i] += state->b_vec[0] * (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
                 }
             }
             std::fill(active_var.begin(), active_var.end(), false);
@@ -99,14 +106,30 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
             state, X_range, active_var, yhats_test_xinfo[sweeps], state->p_categorical, tree_ind, theta, tau);
             
-            // update data pointers and state_sweep
-            for (size_t i = 0; i < state->tau_fit.size(); i++)
-            {
+            // update parital residuals here based on subtracted tau_fit
+            for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, i, state->p, Xorder_tau_std[0].size());
                 x_struct_trt->data_pointers[tree_ind][i] = &bn->theta_vector;
                 state->tau_fit[i] += (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
+                // if (state->z[i] == 1)
+                // {
+                //    state->residual[i] -= state->b_vec[1] * (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
+                // }
+                // else
+                // {
+                //     state->residual[i] -= state->b_vec[0] * (*(x_struct_trt->data_pointers[tree_ind][i]))[0];
+                // }
             }
         }
+        // update a, b0 and b1, although they are updated per tree, they are saved per forest.
+        state->a = a_xinfo[0][sweeps];
+        state->b_vec[0] = b_xinfo[0][sweeps];
+        state->b_vec[1] = b_xinfo[1][sweeps];
+
+        // update residual
+        // for (size_t i = 0; i < Xorder_tau_std[0].size();i++) {
+        //     state->residual[i] += state->a * mu_fit_std[sweeps][i];
+        // }
     }
 
     thread_pool.stop();

@@ -26,6 +26,7 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
                     bool a_scaling,
                     bool b_scaling)
 {
+  cout << "y = " << (*state->y_std)[0] << endl; 
   //cout << "size of Xorder std " << Xorder_std.size() << endl;
   //cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   if (state->parallel)
@@ -86,12 +87,19 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
         }
       }
     }
-
+    cout << "sweep = " << sweeps << ", a = " << state->a << ", b = " << state->b_vec << ", mu_fit = " << state->mu_fit[0] << endl;
+       
     model_ps->set_state_status(state, 1, X_tau_std, Xorder_tau_std);
 
     ////////////// Treatment term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
     {
+      if (state->z[0] == 1){
+        cout << "sweep " << sweeps << ", tree " << tree_ind <<" resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " tau_fit = " << state->tau_fit[0]  << endl;
+      }
+      else{
+        cout << "sweep " << sweeps << ", tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " tau_fit = " << state->tau_fit[0]  << endl;
+      }
       state->update_residuals(); // update residuals
       model_trt->draw_sigma(state, 1); // draw sigmas (and update them in the state obj)
 

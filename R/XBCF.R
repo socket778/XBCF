@@ -203,6 +203,7 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
     obj$meany = meany
     obj$tauhats = obj$tauhats * sdy
     obj$muhats = obj$muhats * sdy
+    if(exists("fitz")) { obj$fitz = fitz }
 
     obj$tauhats.adjusted <- matrix(NA, length(y), num_sweeps-burnin)
     obj$muhats.adjusted <- matrix(NA, length(y), num_sweeps-burnin)

@@ -31,10 +31,11 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     }
 
     if(is.null(pihat)) {
-        sink("/dev/null") # silence output
-        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
-        sink() # close the stream
-        pihat = fitz$fitted.values
+        if(is.null(model$fitz)){
+            stop('No model to fit pihat')
+        }else{
+            pihat = as.matrix(stats::predict(model$fitz, x_con))
+        }
     }
     if(!("matrix" %in% class(pihat))) {
         cat("Msg: input pihat is not a matrix, try to convert type.\n")
@@ -298,8 +299,8 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 #'
 #' @return A list with two matrices. Each matrix corresponds to a set of draws of predicted values; rows are datapoints, columns are iterations.
 #' @export
-predictGP <- function(model, x_con, x_mod=x_con, xtrain_mod, y, z, 
-                    theta = 1, tau = NULL, pihat=NULL, burnin=NULL, verbose = FALSE, 
+predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x_mod=x_con,
+                    pihat_tr = NULL, pihat_te = NULL, theta = 1, tau = NULL, burnin=NULL, verbose = FALSE, 
                     parallel = TRUE, set_random_seed = FALSE, random_seed = 0) {
 
     if(!("matrix" %in% class(x_con))) {
@@ -311,6 +312,10 @@ predictGP <- function(model, x_con, x_mod=x_con, xtrain_mod, y, z,
         x_mod = as.matrix(x_mod)
     }
 
+    if(!("matrix" %in% class(xtrain_con))) {
+        cat("Msg: input x_mod is not a matrix, try to convert type.\n")
+        xtrain_con = as.matrix(xtrain_con)
+    }
     if(!("matrix" %in% class(xtrain_mod))) {
         cat("Msg: input x_mod is not a matrix, try to convert type.\n")
         xtrain_mod = as.matrix(xtrain_mod)
@@ -335,20 +340,36 @@ predictGP <- function(model, x_con, x_mod=x_con, xtrain_mod, y, z,
         ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
-    if(is.null(pihat)) {
+    if(is.null(pihat_tr)) {
         sink("/dev/null") # silence output
-        fitz = nnet::nnet(z~.,data = x_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+        fitz = nnet::nnet(z~.,data = xtrain_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
         sink() # close the stream
-        pihat = fitz$fitted.values
+        pihat_tr = as.matrix(fitz$fitted.values)
     }
-    if(!("matrix" %in% class(pihat))) {
+    if(is.null(pihat_te)){
+        if (!exists("fitz")){
+            sink("/dev/null") # silence output
+            fitz = nnet::nnet(z~.,data = xtrain_con, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+            sink() # close the stream
+        }
+        pihat_te = as.matrix(stats::predict(fitz, x_con))
+    }
+    if(!("matrix" %in% class(pihat_tr))) {
         cat("Msg: input pihat is not a matrix, try to convert type.\n")
-        pihat = as.matrix(pihat)
+        pihat_tr = as.matrix(pihat_tr)
+    }
+    if(!("matrix" %in% class(pihat_te))) {
+        cat("Msg: input pihat is not a matrix, try to convert type.\n")
+        pihat_te = as.matrix(pihat_te)
     }
 
-    if(ncol(pihat) != 1) {
+    if(ncol(pihat_tr) != 1) {
         stop(paste0('Propensity score input must be a 1-column matrix or NULL (default).
-        A matrix with ', ncol(pihat), ' columns was provided instead.'))
+        A matrix with ', ncol(pihat_tr), ' columns was provided instead.'))
+    }
+    if(ncol(pihat_te) != 1) {
+        stop(paste0('Propensity score input must be a 1-column matrix or NULL (default).
+        A matrix with ', ncol(pihat_te), ' columns was provided instead.'))
     }
 
     if (is.null(tau)){
@@ -356,12 +377,21 @@ predictGP <- function(model, x_con, x_mod=x_con, xtrain_mod, y, z,
         tau = var(y) / model$model_params$num_trees_trt
     }
 
-    x_con <- cbind(pihat, x_con)
+    xtrain_con <- cbind(pihat_tr, xtrain_con)
+    x_con <- cbind(pihat_te, x_con)
+
+    y = y - model$meany
+    if(model$sdy == 0) {
+        stop('y is a constant variable; sdy = 0')
+    } else {
+        y = y / model$sdy
+    }
 
     obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
+    objtr = .Call(`_XBCF_predict`, xtrain_con, model$model_list$tree_pnt_pr)
     # change this to predict.gp
     # model$sigma0_draws, sigma1_draws
-    obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, obj1$predicted_values,
+    obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, objtr$predicted_values,
                 model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b_draws,
                 theta, tau, model$model_params$p_categorical_trt,
                 verbose, parallel, set_random_seed, random_seed)

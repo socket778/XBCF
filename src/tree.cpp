@@ -1996,11 +1996,10 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         std::vector<bool> active_var_left(p_continuous, false); // check which side the outliers are on for each active var
         std::vector<bool> active_var_right(p_continuous, false); // check which side the outliers are on for each active var
 
-
         // TODO: out-of-range logic work differently on causal non-overlap problem
         // data points can be out-of-range on both side after the cut on active variable (the cut itself is outside the overlap area)
         for (size_t i = 0; i < Ntest; i++){
-            for (size_t j = 0; j < p_continuous; j++){
+           for (size_t j = 0; j < p_continuous; j++){
                 if (active_var[j]){
                     if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) > X_range[j][1]){
                         test_ind.push_back(Xtestorder_std[j][i]);
@@ -2024,13 +2023,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 p_active += 1;
             }
         }
-
+        // cout << "p_active  = " << p_active << ", Ntest = " << test_ind.size() << endl;
         if (p_active == 0){
             // cout << "Warning: number of continuous active variable is 0. Sweep = " << sweeps << ", tree = " << tree_ind << endl;
             return;     
         }
        
         Ntest = test_ind.size();
+        // cout << "out of range Ntest = " << Ntest << endl;
         if (Ntest == 0){
             return;
         }
@@ -2099,6 +2099,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 j_count += 1;
             }
         }
+
         if (j_count < p_active){
             cout << "j_count = " << j_count << ", p_active = " << p_active << ", active_var = " << active_var << endl;
             cout << "active var left = " << active_var_left << ", right = " << active_var_right << endl;
@@ -2107,10 +2108,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         mat resid(N, 1);
         for (size_t i = 0; i < N; i++){
-            resid(i, 0) = state->residual[i] - this->theta_vector[0];
+            resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0];
+            // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
         }
         
         mat cov(N + Ntest, N + Ntest);
+        // cout << "tau = " << tau << endl;
         get_rel_covariance(cov, X, x_range, theta, tau); 
         mat k = cov.submat(N, 0, N + Ntest - 1, N - 1); // cov[2:nrow(cov), 1]
 
@@ -2123,18 +2126,29 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "Kinv = " << Kinv << endl;
         
         mat mu = this->theta_vector[0] + k * Kinv * resid;
+        // if ((Ntest > 4) & (N > 5)){
+        //     // cout << "k*Kinv = " << k.submat(0, 0, 3, 4) * Kinv.submat(0, 0, 4, 4) << endl;
+        //     cout << "z = ";
+        //     for (size_t i = 0; i < 5; i++){
+        //         cout << state->z[train_ind[i]] << " ";
+        //     }
+        //     cout << endl;
+        //     cout << "resid = " << trans(resid.submat(0, 0, 4, 0)) << endl;
+        //     cout << "mu = " << this->theta_vector[0] + trans(k.submat(0, 0, 3, 4) * Kinv.submat(0, 0, 4, 4) * resid.submat(0, 0, 4, 0) ) << endl;
+        // }
+
         mat Sig =  cov.submat(N, N, N + Ntest - 1, N + Ntest - 1) - k * Kinv * trans(k);
         std::normal_distribution<double> normal_samp(0.0, 1.0);
-        mat rnorm(Ntest , 1);
+        // mat rnorm(Ntest , 1);
         // for (size_t i = 0; i < Ntest; i++) { rnorm(i, 0) = normal_samp(x_struct->gen); }
 
         // mat L = chol(Sig, "lower");
         // mat mu_pred = mu + L * rnorm;
         for (size_t i = 0; i < Ntest; i++){
             yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen) - this->theta_vector[0];
-            // if (abs(yhats_test_xinfo[test_ind[i]]) > 10){
-            //     cout << "yhat = " << yhats_test_xinfo[test_ind[i]] << ", mu = " << mu(i) << ", sig = " << pow(Sig(i, i), 0.5) << ", theta = " << this->theta_vector[0] << endl;
-            //     cout << "resid = " << resid(i) << endl;
+            // if (abs(yhats_test_xinfo[test_ind[i]]) > 2){
+            //     cout << "yhat = " << yhats_test_xinfo[test_ind[i]] << ", mu = " << mu(i) << ", theta = " << this->theta_vector[0] << endl;
+            //     // cout << "resid = " << resid(i) << endl;
             // }
         }
     }
