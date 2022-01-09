@@ -1909,6 +1909,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         std::vector<size_t> Xtest_counts_right(Xtest_counts.size());
 
         if (N > 0){
+            // cout << "var " << v << " cut " << c << endl;
             // get split point
             size_t split_point = get_split_point(x_struct->X_std, Xorder_std, x_struct->n_y, v, c);
             ini_xinfo_sizet(Xorder_left_std, split_point + 1, p);
@@ -1976,6 +1977,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "end rigth " << endl;
     }
     else {
+        // cout << "active_var = " << active_var << endl;
         if (N == 0){
             cout << "0 training data in the leaf node" << endl;
             throw;
@@ -2068,11 +2070,6 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }
         }
 
-        if (N == 0){
-            cout << "N = 0 after sampling, p_active = " << p_active << endl;
-            throw;
-        }
-        
         mat X(N + Ntest, p_active);
         std::vector<double> x_range(p_active);
         const double *split_var_x_pointer;
@@ -2119,13 +2116,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         // Add diagonal term sigma^2 based on treated/control group
         for (size_t i = 0; i < N; i++){
-            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / state->num_trees_vec[1] + (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / state->num_trees_vec[1];
+            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);
+            cov(i, i) += (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);
         } 
 
         mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));
         // cout << "Kinv = " << Kinv << endl;
         
-        mat mu = this->theta_vector[0] + k * Kinv * resid;
+        mat mu = k * Kinv * resid;
         // if ((Ntest > 4) & (N > 5)){
         //     // cout << "k*Kinv = " << k.submat(0, 0, 3, 4) * Kinv.submat(0, 0, 4, 4) << endl;
         //     cout << "z = ";
@@ -2145,11 +2143,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // mat L = chol(Sig, "lower");
         // mat mu_pred = mu + L * rnorm;
         for (size_t i = 0; i < Ntest; i++){
-            yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen) - this->theta_vector[0];
-            // if (abs(yhats_test_xinfo[test_ind[i]]) > 2){
-            //     cout << "yhat = " << yhats_test_xinfo[test_ind[i]] << ", mu = " << mu(i) << ", theta = " << this->theta_vector[0] << endl;
-            //     // cout << "resid = " << resid(i) << endl;
-            // }
+            yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen);
         }
     }
 

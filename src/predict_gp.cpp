@@ -94,11 +94,11 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 if (state->z[i] == 1)
                 {
-                    state->residual[i] = (*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i];
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]) / state->b_vec[1];
                 }
                 else
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]) / state->b_vec[0];
                 }
             }
             std::fill(active_var.begin(), active_var.end(), false);
@@ -112,10 +112,10 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             // bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, 0, state->p, Xorder_tau_std[0].size());
             // x_struct_trt->data_pointers[tree_ind][0] = &bn->theta_vector;
             // if (state->z[0] == 1){
-            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " mu = " << state->mu_fit[0] << endl;
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " theta = " << (*(x_struct_trt->data_pointers[tree_ind][0]))[0] << endl;
             // }
             // else{
-            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " mu = " << state->mu_fit[0] << endl;
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " theta = " << (*(x_struct_trt->data_pointers[tree_ind][0]))[0] << endl;
             // }
             
             // update parital residuals here based on subtracted tau_fit

@@ -3,7 +3,7 @@ library(XBCF)
 n = 500
 nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
-tau = -cos(0.2*x)
+tau = 2 + cos(0.5*x)
 A = rbinom(n+nt, 1, 0*(abs(x)>5) + 0.5*(abs(x)<=5))
 y1 = cos(0.2*x) + A*tau
 y0 = cos(0.2*x)
@@ -27,9 +27,12 @@ xtrain = as.matrix(x[1:n,]); xtest = as.matrix(x[(n+1):(n+nt),])
 
 # run XBCF
 t1 = proc.time()
+burnin = 0;
+num_sweeps = 100
+num_trees_trt = 10
 xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, 
                 pihat = NULL, pcat_con = 0,  pcat_mod = 0,
-                num_sweeps = 10, n_trees_mod = 3, burnin = 0)
+                num_sweeps = num_sweeps, n_trees_mod = num_trees_trt, burnin = burnin)
 tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt + xbcf.fit$model_params$num_trees_pr) 
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
                     pihat_tr = NULL, pihat_te = NULL, tau = tau_gp, verbose = FALSE)
@@ -45,13 +48,13 @@ tauhat = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
 cat('True ATE:, ', round(mean(tauhat), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3))
 
-gp.upper <- apply(pred.gp$taudraws, 1, quantile, 0.975, na.rm = TRUE)
-gp.lower <- apply(pred.gp$taudraws, 1, quantile, 0.025, na.rm = TRUE)
+gp.upper <- apply(pred.gp$taudraws[, (burnin+1):num_sweeps], 1, quantile, 0.975, na.rm = TRUE)
+gp.lower <- apply(pred.gp$taudraws[, (burnin+1):num_sweeps], 1, quantile, 0.025, na.rm = TRUE)
 
 
 # plot(xtest, ytest, col = ztest+1)
 # readline()
-plot(xtest, tau[(n+1):(n+nt)], ylim = range(c(tau, tauhats.pred, tauhats.gp)))
+plot(xtest, tau[(n+1):(n+nt)], ylim = range(c(tau, tauhats.pred, tauhats.gp, gp.upper, gp.lower)))
 points(xtest, tauhats.gp, col = 2)
 points(xtest, tauhats.pred, col = 4) # the same ????
 # readline()
