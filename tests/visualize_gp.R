@@ -1,16 +1,17 @@
 library(XBCF)
 
 n = 500
-nt = 500
+nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
-tau = -cos(x)
+tau = -cos(0.2*x)
 A = rbinom(n+nt, 1, 0*(abs(x)>5) + 0.5*(abs(x)<=5))
-y1 = cos(x) + A*tau
-y0 = cos(x)
+y1 = cos(0.2*x) + A*tau
+y0 = cos(0.2*x)
 y = A*y1 + (1-A)*y0 + rnorm(n+nt, 0, 0.2)
 
 # propensity score?
 # pihat = NULL
+# make sure pihat_tr is consistent
 sink("/dev/null")
 fitz = nnet::nnet(A ~.,data = as.matrix(x, n+nt, 1), size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
 sink() # close the stream
@@ -28,8 +29,8 @@ xtrain = as.matrix(x[1:n,]); xtest = as.matrix(x[(n+1):(n+nt),])
 t1 = proc.time()
 xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, 
                 pihat = NULL, pcat_con = 0,  pcat_mod = 0,
-                num_sweeps = 2, n_trees_mod = 5, burnin = 0)
-tau_gp = xbcf.fit$sigma1_draws[xbcf.fit$model_params$num_trees_trt, xbcf.fit$model_params$num_sweeps]^2/xbcf.fit$model_params$num_trees_trt
+                num_sweeps = 10, n_trees_mod = 3, burnin = 0)
+tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt + xbcf.fit$model_params$num_trees_pr) 
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
                     pihat_tr = NULL, pihat_te = NULL, tau = tau_gp, verbose = FALSE)
 # pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)

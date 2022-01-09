@@ -199,6 +199,7 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
     class(obj) = "XBCF"
 
     #obj$sdy_use = sdy_use
+    obj$pihat = pihat
     obj$sdy = sdy
     obj$meany = meany
     obj$tauhats = obj$tauhats * sdy

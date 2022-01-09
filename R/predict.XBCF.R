@@ -377,7 +377,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         tau = var(y) / model$model_params$num_trees_trt
     }
 
-    xtrain_con <- cbind(pihat_tr, xtrain_con)
+    xtrain_con <- cbind(model$pihat, xtrain_con)
     x_con <- cbind(pihat_te, x_con)
 
     y = y - model$meany

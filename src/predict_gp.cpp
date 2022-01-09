@@ -68,6 +68,12 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
         ////////////// Treatment term loop
         for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
         {
+            // if (state->z[0] == 1){
+            //     cout << "sweep = " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << endl;
+            // }
+            // else{
+            //     cout << "sweep = " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << endl;
+            // }
             if (verbose == true)
             {
                 COUT << "--------------------------------" << endl;
@@ -102,6 +108,16 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
             state, X_range, active_var, yhats_test_xinfo[sweeps], state->p_categorical, tree_ind, theta, tau);
             
+            // // check residuals and theta value
+            // bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, 0, state->p, Xorder_tau_std[0].size());
+            // x_struct_trt->data_pointers[tree_ind][0] = &bn->theta_vector;
+            // if (state->z[0] == 1){
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " mu = " << state->mu_fit[0] << endl;
+            // }
+            // else{
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " mu = " << state->mu_fit[0] << endl;
+            // }
+            
             // update parital residuals here based on subtracted tau_fit
             for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, i, state->p, Xorder_tau_std[0].size());
@@ -114,6 +130,12 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             state->b_vec[0] = b0_xinfo[sweeps][state->num_trees_vec[0] + tree_ind];
             state->b_vec[1] = b1_xinfo[sweeps][state->num_trees_vec[0] + tree_ind];
         }
+        // if (state->z[0] == 1){
+        //     cout << "sweeps " << sweeps << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << endl;
+        // }
+        // else{
+        //     cout << "sweeps " << sweeps << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << endl;
+        // }
     }
 
     thread_pool.stop();
@@ -210,7 +232,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
             mu_fit_std[i][j] = mu_fit(j, i);
         }
     }
-
     ///////////////////////////////////////////////////////////////////
 
     std::vector<double> sigma_vec(2); // vector of sigma0, sigma1
