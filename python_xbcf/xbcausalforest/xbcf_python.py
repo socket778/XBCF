@@ -450,8 +450,9 @@ class XBCF(object):
         tauhats = self._xbcf_cpp.get_tauhats(
             self.params["num_sweeps"] * fit_x_t.shape[0]
         )
-        b = self._xbcf_cpp.get_b(self.params["num_sweeps"] * 2)
-        a = self._xbcf_cpp.get_a(self.params["num_sweeps"] * 1)
+        a = self._xbcf_cpp.get_a(self.params["num_sweeps"] * (self.params["num_trees_pr"] + self.params["num_trees_trt"]))
+        b0 = self._xbcf_cpp.get_b0(self.params["num_sweeps"] * (self.params["num_trees_pr"] + self.params["num_trees_trt"]))
+        b1 = self._xbcf_cpp.get_b1(self.params["num_sweeps"] * (self.params["num_trees_pr"] + self.params["num_trees_trt"]))
 
         # b1 = self._xbart_cpp.get_bs(self.params["num_sweeps"]*fit_x.shape[0], 0)
         # b2 = self._xbart_cpp.get_bs(self.params["num_sweeps"]*fit_x.shape[0], 1)
@@ -463,19 +464,21 @@ class XBCF(object):
         self.tauhats = tauhats.reshape(
             (fit_x_t.shape[0], self.params["num_sweeps"]), order="C"
         )
-        self.b = b.reshape((self.params["num_sweeps"]), 2, order="C")
-        self.a = a.reshape((self.params["num_sweeps"]), 1, order="C")
-
+        
+        self.a = a.reshape(self.params["num_trees_pr"] + self.params["num_trees_trt"], self.params["num_sweeps"], order="C")
+        self.b0 = b0.reshape(self.params["num_trees_pr"] + self.params["num_trees_trt"], self.params["num_sweeps"], order="C")
+        self.b1 = b1.reshape(self.params["num_trees_pr"] + self.params["num_trees_trt"], self.params["num_sweeps"], order="C")
         # Unstandardize
         if self.standardize_target:
             a = self.a.transpose()
-            b = self.b.transpose()
+            b0 = self.b0.transpose()
+            b1 = self.b1.transpose()
 
             self.tauhats = self.sdy_ * self.tauhats
             self.muhats = self.sdy_ * self.muhats
 
             self.muhats_adjusted = (self.muhats * a) + self.meany_
-            self.tauhats_adjusted = self.tauhats * (b[1] - b[0])
+            self.tauhats_adjusted = self.tauhats * (b1 - b0)
 
         # Additionaly Members
         # self.importance = self._xbart_cpp._get_importance(fit_x.shape[1])
@@ -537,8 +540,9 @@ class XBCF(object):
             (pred_x.shape[0], self.params["num_sweeps"]), order="C"
         )
 
-        b = self.b.transpose()
-        thats =  tauhats_test* (b[1] - b[0])
+        b0 = self.b0.transpose()
+        b1 = self.b1.transpose()
+        thats =  tauhats_test* (b1 - b0)
 
         # Unstandardize prediction
         if self.standardize_target:

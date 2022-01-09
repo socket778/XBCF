@@ -17,10 +17,10 @@ sink() # close the stream
 pihat = fitz$fitted.values
 
 
-ytrain = y[1:n]; ytest = y[(n+1):(n+nt)]
-ztrain = A[1:n]; ztest = A[(n+1):(n+nt)]
+ytrain = as.matrix(y[1:n]); ytest = as.matrix(y[(n+1):(n+nt)])
+ztrain = as.matrix(A[1:n]); ztest = as.matrix(A[(n+1):(n+nt)])
 # pihat_tr = pihat[1:n]; pihat_te = pihat[(n+1):(n+nt)]
-xtrain = x[1:n,]; xtest = x[(n+1):(n+nt),]
+xtrain = as.matrix(x[1:n,]); xtest = as.matrix(x[(n+1):(n+nt),])
 
 
 

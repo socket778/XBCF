@@ -70,7 +70,8 @@ private:
 	matrix<double> sigma0_draw_xinfo;
 	matrix<double> sigma1_draw_xinfo;
 	matrix<double> a_xinfo;
-	matrix<double> b_xinfo;
+	matrix<double> b0_xinfo;
+	matrix<double> b1_xinfo;
 	// make two since we have one forest per term: don't need it since it's for importance
 	// vec_d mtry_weight_current_tree_pr;
 	// vec_d mtry_weight_current_tree_trt;
@@ -136,7 +137,8 @@ public:
 	void get_muhats_test(int size, double *arr);
 	void get_tauhats(int size, double *arr);
 	void get_tauhats_test(int size, double *arr);
-	void get_b(int size, double *arr);
+	void get_b0(int size, double *arr);
+	void get_b1(int size, double *arr);
 	void get_a(int size, double *arr);
 	// void get_sigma_draw(int size, double *arr);
 	// void _get_importance(int size, double *arr);

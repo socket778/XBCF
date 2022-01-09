@@ -13,7 +13,7 @@
 using namespace arma;
 
 // [[Rcpp::export]]
-Rcpp::List predict(mat X,
+Rcpp::List xbcf_predict(mat X,
                         Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt)
 {
 

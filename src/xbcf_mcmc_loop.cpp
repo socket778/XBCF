@@ -9,8 +9,9 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
                     bool verbose,
                     matrix<double> &sigma0_draw_xinfo,
                     matrix<double> &sigma1_draw_xinfo,
-                    matrix<double> &b_xinfo,
                     matrix<double> &a_xinfo,
+                    matrix<double> &b0_xinfo,
+                    matrix<double> &b1_xinfo,
                     // matrix<double> &b0_draw_xinfo,
                     // matrix<double> &b1_draw_xinfo,
                     // matrix<double> &total_fit,
@@ -26,7 +27,6 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
                     bool a_scaling,
                     bool b_scaling)
 {
-  cout << "y = " << (*state->y_std)[0] << endl; 
   //cout << "size of Xorder std " << Xorder_std.size() << endl;
   //cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
   if (state->parallel)
@@ -86,20 +86,17 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
           model_trt->update_b_values(state);
         }
       }
+      // store draws for b0, b1 and a,
+      a_xinfo[sweeps][tree_ind] = state->a;
+      b0_xinfo[sweeps][tree_ind] = state->b_vec[0];
+      b1_xinfo[sweeps][tree_ind] = state->b_vec[1];
     }
-    cout << "sweep = " << sweeps << ", a = " << state->a << ", b = " << state->b_vec << ", mu_fit = " << state->mu_fit[0] << endl;
        
     model_ps->set_state_status(state, 1, X_tau_std, Xorder_tau_std);
 
     ////////////// Treatment term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[1]; tree_ind++)
-    {
-      if (state->z[0] == 1){
-        cout << "sweep " << sweeps << ", tree " << tree_ind <<" resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " tau_fit = " << state->tau_fit[0]  << endl;
-      }
-      else{
-        cout << "sweep " << sweeps << ", tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " tau_fit = " << state->tau_fit[0]  << endl;
-      }
+    { 
       state->update_residuals(); // update residuals
       model_trt->draw_sigma(state, 1); // draw sigmas (and update them in the state obj)
 
@@ -139,12 +136,11 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
           model_trt->update_b_values(state);
         }
       }
+      // store draws for b0, b1 and a,
+      a_xinfo[sweeps][state->num_trees_vec[0] + tree_ind] = state->a;
+      b0_xinfo[sweeps][state->num_trees_vec[0] + tree_ind] = state->b_vec[0];
+      b1_xinfo[sweeps][state->num_trees_vec[0] + tree_ind] = state->b_vec[1];
     }
-
-    // store draws for b0, b1 and a, although they are updated per tree, we save results per forest (sweep)
-    b_xinfo[0][sweeps] = state->b_vec[0];
-    b_xinfo[1][sweeps] = state->b_vec[1];
-    a_xinfo[0][sweeps] = state->a;
   }
 
   // print out all residuals, total fits, etc

@@ -251,16 +251,16 @@ Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec
     ini_matrix(sigma1_draw_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
     matrix<double> a_xinfo;
-    ini_matrix(a_xinfo, num_sweeps, 1);
+    ini_matrix(a_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
-    // matrix<double> b0_draw_xinfo;
-    // ini_matrix(b0_draw_xinfo, num_trees_trt, num_sweeps);
+    matrix<double> b0_xinfo;
+    ini_matrix(b0_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
-    // matrix<double> b1_draw_xinfo;
-    // ini_matrix(b1_draw_xinfo, num_trees_trt, num_sweeps);
+    matrix<double> b1_xinfo;
+    ini_matrix(b1_xinfo, num_trees_trt + num_trees_pr, num_sweeps);
 
-    matrix<double> b_xinfo;
-    ini_matrix(b_xinfo, num_sweeps, 2);
+    // matrix<double> b_xinfo;
+    // ini_matrix(b_xinfo, num_sweeps, 2);
 
     // // Create trees
     vector<vector<tree>> *trees_pr = new vector<vector<tree>>(num_sweeps);
@@ -295,7 +295,7 @@ Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec
     std::unique_ptr<X_struct> x_struct_trt(new X_struct(Xpointer_tau, &y_std, N, Xorder_tau_std, p_categorical_trt, p_continuous_trt, &initial_theta_trt, num_trees_trt));
 
     // mcmc_loop returns tauhat [N x sweeps] matrix
-    mcmc_loop_xbcf(Xorder_std, Xorder_tau_std, Xpointer, Xpointer_tau, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, b_xinfo, a_xinfo, *trees_pr, *trees_trt, no_split_penality,
+    mcmc_loop_xbcf(Xorder_std, Xorder_tau_std, Xpointer, Xpointer_tau, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, a_xinfo, b0_xinfo, b1_xinfo, *trees_pr, *trees_trt, no_split_penality,
                    state, model_pr, model_trt, x_struct_pr, x_struct_trt, a_scaling, b_scaling);
 
     //predict tauhats and muhats
@@ -310,8 +310,11 @@ Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec
     Rcpp::NumericMatrix sigma1_draws(num_trees_trt + num_trees_pr, num_sweeps);
     // Rcpp::NumericMatrix b0_draws(num_trees_trt, num_sweeps);
     // Rcpp::NumericMatrix b1_draws(num_trees_trt, num_sweeps);
-    Rcpp::NumericMatrix b_draws(num_sweeps, 2);
-    Rcpp::NumericMatrix a_draws(num_sweeps, 1);
+    
+    Rcpp::NumericMatrix a_draws(num_trees_trt + num_trees_pr, num_sweeps);
+    Rcpp::NumericMatrix b0_draws(num_trees_trt + num_trees_pr, num_sweeps);
+    Rcpp::NumericMatrix b1_draws(num_trees_trt + num_trees_pr, num_sweeps);
+
     Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt_pr(trees_pr, true);
     Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt_trt(trees_trt, true);
 
@@ -322,8 +325,10 @@ Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec
     std_to_rcpp(sigma1_draw_xinfo, sigma1_draws);
     // std_to_rcpp(b0_draw_xinfo, b0_draws);
     // std_to_rcpp(b1_draw_xinfo, b1_draws);
-    std_to_rcpp(b_xinfo, b_draws);
+    
     std_to_rcpp(a_xinfo, a_draws);
+    std_to_rcpp(b0_xinfo, b0_draws);
+    std_to_rcpp(b1_xinfo, b1_draws);
 
     auto end = system_clock::now();
 
@@ -381,8 +386,9 @@ Rcpp::List XBCF_cpp(mat y, mat X, mat X_tau, mat z,             // responses vec
         Rcpp::Named("muhats") = muhats,
         Rcpp::Named("sigma0_draws") = sigma0_draws,
         Rcpp::Named("sigma1_draws") = sigma1_draws,
-        Rcpp::Named("b_draws") = b_draws,
         Rcpp::Named("a_draws") = a_draws,
+        Rcpp::Named("b0_draws") = b0_draws,
+        Rcpp::Named("b1_draws") = b1_draws,
         Rcpp::Named("model_list") = Rcpp::List::create(Rcpp::Named("tree_pnt_pr") = tree_pnt_pr,
                                                        Rcpp::Named("tree_pnt_trt") = tree_pnt_trt,
                                                        Rcpp::Named("y_mean") = y_mean),

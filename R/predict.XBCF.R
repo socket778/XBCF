@@ -49,8 +49,8 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
-    obj2 = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
+    obj1 = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
+    obj2 = .Call(`_XBCF_xbcf_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- ncol(model$tauhats)
     if(is.null(burnin)) {
@@ -66,8 +66,8 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
-        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
+        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
     }
 
     obj <- list(mudraws=mus, taudraws=taus)
@@ -96,7 +96,7 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
         ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
-    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
+    obj = .Call(`_XBCF_xbcf_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -111,7 +111,7 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
     }
 
     return(tauhat.draws)
@@ -138,7 +138,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
         ' columns; trying to predict on x_con with ', ncol(x_mod),' columns.'))
     }
 
-    obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
+    obj = .Call(`_XBCF_xbcf_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -153,7 +153,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
     }
 
     tauhats <- rowMeans(tauhat.draws)
@@ -202,7 +202,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
+    obj = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -217,7 +217,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin]= obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
     }
 
     return(muhat.draws)
@@ -264,7 +264,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 
     x_con <- cbind(pihat, x_con)
 
-    obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
+    obj = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -279,7 +279,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
     }
 
     muhats <- rowMeans(muhat.draws)
@@ -387,12 +387,12 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         y = y / model$sdy
     }
 
-    obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
-    objtr = .Call(`_XBCF_predict`, xtrain_con, model$model_list$tree_pnt_pr)
+    obj1 = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
+    objtr = .Call(`_XBCF_xbcf_predict`, xtrain_con, model$model_list$tree_pnt_pr)
     # change this to predict.gp
     # model$sigma0_draws, sigma1_draws
     obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, objtr$predicted_values,
-                model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b_draws,
+                model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b0_draws, model$b1_draws,
                 theta, tau, model$model_params$p_categorical_trt,
                 verbose, parallel, set_random_seed, random_seed)
 
@@ -410,8 +410,8 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
-        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
+        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
     }
 
     obj <- list(mudraws=mus, taudraws=taus)

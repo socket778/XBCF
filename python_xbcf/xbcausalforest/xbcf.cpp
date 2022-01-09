@@ -271,10 +271,11 @@ void XBCFcpp::_fit(int n_t, int d_t, double *a_t, // treatment
   ini_matrix(sigma1_draw_xinfo, this->params.num_trees_trt, this->params.num_sweeps);
 
   //matrix<double> a_xinfo;
-  ini_matrix(this->a_xinfo, this->params.num_sweeps, 1);
+  ini_matrix(this->a_xinfo, this->parmas.num_trees_trt + this->params.num_trees_pr, this->params.num_sweeps);
 
   //matrix<double> b_xinfo;
-  ini_matrix(this->b_xinfo, this->params.num_sweeps, 2);
+  ini_matrix(this->b0_xinfo, this->parmas.num_trees_trt + this->params.num_trees_pr, this->params.num_sweeps);
+  ini_matrix(this->b1_xinfo, this->parmas.num_trees_trt + this->params.num_trees_pr, this->params.num_sweeps);
 
   // Temp Change
   // ini_xinfo(this->sigma_draw_xinfo, this->params.num_trees_trt, this->params.num_sweeps);
@@ -322,7 +323,7 @@ void XBCFcpp::_fit(int n_t, int d_t, double *a_t, // treatment
   //cout << "MCMC LOOP STEP" << endl;
   // mcmc_loop returns tauhat [N x sweeps] matrix
   mcmc_loop_xbcf(Xorder_std, Xorder_tau_std, Xpointer, Xpointer_tau, this->params.verbose,
-                 sigma0_draw_xinfo, sigma1_draw_xinfo, this->b_xinfo, this->a_xinfo,
+                 sigma0_draw_xinfo, sigma1_draw_xinfo, this->a_xinfo, this->b0_xinfo, this->b1_xinfo, 
                  this->trees_pr, this->trees_trt, no_split_penality,
                  state, model_pr, model_trt, x_struct_pr, x_struct_trt,
                  this->params.a_scaling, this->params.b_scaling);
@@ -455,9 +456,14 @@ void XBCFcpp::get_tauhats_test(int size, double *arr)
   xinfo_to_np(this->tauhats_test_xinfo, arr);
 }
 
-void XBCFcpp::get_b(int size, double *arr)
+void XBCFcpp::get_b0(int size, double *arr)
 {
-  xinfo_to_np(this->b_xinfo, arr);
+  xinfo_to_np(this->b0_xinfo, arr);
+}
+
+void XBCFcpp::get_b1(int size, double *arr)
+{
+  xinfo_to_np(this->b1_xinfo, arr);
 }
 
 void XBCFcpp::get_a(int size, double *arr)

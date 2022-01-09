@@ -209,8 +209,8 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
     obj$muhats.adjusted <- matrix(NA, length(y), num_sweeps-burnin)
     seq <- (burnin+1):num_sweeps
     for (i in seq) {
-        obj$tauhats.adjusted[, i - burnin] = obj$tauhats[,i] * (obj$b_draws[i,2] - obj$b_draws[i,1])
-        obj$muhats.adjusted[, i - burnin] = obj$muhats[,i] * (obj$a_draws[i]) + meany
+        obj$tauhats.adjusted[, i - burnin] = obj$tauhats[,i] * (obj$b1_draws[nrow(obj$b1_draws), i] - obj$b0_draws[nrow(obj$b0_draws), i])
+        obj$muhats.adjusted[, i - burnin] = obj$muhats[,i] * (obj$a_draws[nrow(obj$a_draws), i]) + meany
     }
     return(obj)
 }
