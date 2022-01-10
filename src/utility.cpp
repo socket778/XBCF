@@ -261,7 +261,34 @@ void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     return;
 }
 
-void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> z_std,
+void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
+                    std::vector<std::vector<double>> &X_range)
+{
+    size_t N = Xorder_std[0].size();
+    size_t p = Xorder_std.size();
+    ini_matrix(X_range, 2, p);
+
+    for (size_t j = 0; j < p; j++)
+    {
+        for (size_t i = 0; i < N; i++){
+            if (z_std[Xorder_std[j][i]] == 1){
+                X_range[j][0] = *(Xpointer + j * N + Xorder_std[j][i]);
+                break;
+            }
+        }
+        for (size_t i = N; i-->0;)
+        {
+            if (z_std[Xorder_std[j][i]] == 1){
+                X_range[j][1] = *(Xpointer + j * N + Xorder_std[j][i]);
+                break;
+            }
+        }
+    }
+
+    return;
+}
+
+void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
                 std::vector<std::vector<double>> &X_range)
 {
     size_t N = Xorder_std[0].size();

@@ -3,9 +3,10 @@ library(XBCF)
 n = 500
 nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
-tau = 2 + cos(0.5*x)
+tau = 5 + cos(0.5*x +1)
 A = rbinom(n+nt, 1, 0*(abs(x)>5) + 0.5*(abs(x)<=5))
-y1 = cos(0.2*x) + A*tau
+# A = rbinom(n+nt, 1, 0*(x>5)+0.5*(x<=5))
+y1 = cos(0.2*x) + tau
 y0 = cos(0.2*x)
 y = A*y1 + (1-A)*y0 + rnorm(n+nt, 0, 0.2)
 
@@ -23,12 +24,10 @@ ztrain = as.matrix(A[1:n]); ztest = as.matrix(A[(n+1):(n+nt)])
 # pihat_tr = pihat[1:n]; pihat_te = pihat[(n+1):(n+nt)]
 xtrain = as.matrix(x[1:n,]); xtest = as.matrix(x[(n+1):(n+nt),])
 
-
-
 # run XBCF
 t1 = proc.time()
-burnin = 0;
-num_sweeps = 100
+burnin = 20;
+num_sweeps = 200
 num_trees_trt = 10
 xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, 
                 pihat = NULL, pcat_con = 0,  pcat_mod = 0,
@@ -48,8 +47,8 @@ tauhat = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
 cat('True ATE:, ', round(mean(tauhat), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3))
 
-gp.upper <- apply(pred.gp$taudraws[, (burnin+1):num_sweeps], 1, quantile, 0.975, na.rm = TRUE)
-gp.lower <- apply(pred.gp$taudraws[, (burnin+1):num_sweeps], 1, quantile, 0.025, na.rm = TRUE)
+gp.upper <- apply(pred.gp$taudraws, 1, quantile, 0.975, na.rm = TRUE)
+gp.lower <- apply(pred.gp$taudraws, 1, quantile, 0.025, na.rm = TRUE)
 
 
 # plot(xtest, ytest, col = ztest+1)

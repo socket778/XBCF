@@ -2124,16 +2124,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "Kinv = " << Kinv << endl;
         
         mat mu = k * Kinv * resid;
-        // if ((Ntest > 4) & (N > 5)){
-        //     // cout << "k*Kinv = " << k.submat(0, 0, 3, 4) * Kinv.submat(0, 0, 4, 4) << endl;
-        //     cout << "z = ";
-        //     for (size_t i = 0; i < 5; i++){
-        //         cout << state->z[train_ind[i]] << " ";
-        //     }
-        //     cout << endl;
-        //     cout << "resid = " << trans(resid.submat(0, 0, 4, 0)) << endl;
-        //     cout << "mu = " << this->theta_vector[0] + trans(k.submat(0, 0, 3, 4) * Kinv.submat(0, 0, 4, 4) * resid.submat(0, 0, 4, 0) ) << endl;
-        // }
+        // mat mu = k * resid; 
 
         mat Sig =  cov.submat(N, N, N + Ntest - 1, N + Ntest - 1) - k * Kinv * trans(k);
         std::normal_distribution<double> normal_samp(0.0, 1.0);
