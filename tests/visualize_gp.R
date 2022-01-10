@@ -43,17 +43,23 @@ tauhats.pred <- rowMeans(pred$taudraws)
 tauhats.gp <- rowMeans(pred.gp$taudraws)
 
 # true tau?
-tauhat = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
-cat('True ATE:, ', round(mean(tauhat), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
+tau_te = tau[(n+1):(n+nt)]
+cat('True ATE:, ', round(mean(tau_te), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3))
 
 gp.upper <- apply(pred.gp$taudraws, 1, quantile, 0.975, na.rm = TRUE)
 gp.lower <- apply(pred.gp$taudraws, 1, quantile, 0.025, na.rm = TRUE)
+xbcf.upper <- apply(pred$taudraws, 1, quantile, 0.975, na.rm = TRUE)
+xbcf.lower <- apply(pred$taudraws, 1, quantile, 0.025, na.rm = TRUE)
 
+# evaluate coverage
+cat('Coverage:', '\n')
+cat('GP = ', round(mean((gp.upper >= tau_te) & (gp.lower <= tau_te)), 3), '\n')
+cat('XBCF = ', round(mean((xbcf.upper >= tau_te) & (xbcf.lower <= tau_te)), 3), '\n')
 
 # plot(xtest, ytest, col = ztest+1)
 # readline()
-plot(xtest, tau[(n+1):(n+nt)], ylim = range(c(tau, tauhats.pred, tauhats.gp, gp.upper, gp.lower)))
+plot(xtest, tau_te, ylim = range(c(tau_te, tauhats.pred, tauhats.gp, gp.upper, gp.lower)))
 points(xtest, tauhats.gp, col = 2)
 points(xtest, tauhats.pred, col = 4) # the same ????
 # readline()
