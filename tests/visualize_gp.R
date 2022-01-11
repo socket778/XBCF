@@ -45,7 +45,7 @@ tauhats.gp <- rowMeans(pred.gp$taudraws)
 # true tau?
 tau_te = tau[(n+1):(n+nt)]
 cat('True ATE:, ', round(mean(tau_te), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
-    ', XBCF tau: ', round(mean(tauhats.pred), 3))
+    ', XBCF tau: ', round(mean(tauhats.pred), 3), '\n')
 
 gp.upper <- apply(pred.gp$taudraws, 1, quantile, 0.975, na.rm = TRUE)
 gp.lower <- apply(pred.gp$taudraws, 1, quantile, 0.025, na.rm = TRUE)

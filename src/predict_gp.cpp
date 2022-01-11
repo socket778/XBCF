@@ -241,7 +241,7 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     double bscale0 = -0.5;
     double bscale1 = 0.5;
 
-    std::vector<double> b_vec(2); // vector of sigma0, sigma1
+    std::vector<double> b_vec(2); // vector of b0, b1
     b_vec[0] = bscale0;
     b_vec[1] = bscale1;
 
