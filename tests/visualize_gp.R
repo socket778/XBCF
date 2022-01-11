@@ -5,8 +5,8 @@ nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
 # tau = 5 + cos(0.5*x +1)
 tau =  -0.1*x
-A = rbinom(n+nt, 1, 0*(x>5) + 0.5*(abs(x)<=5) + 1*(x< -5))
-# A = rbinom(n+nt, 1, 0*(x>5)+0.5*(x<=5))
+# A = rbinom(n+nt, 1, 0*(x>5) + 0.5*(abs(x)<=5) + 1*(x< -5))
+A = rbinom(n+nt, 1, 0*(x< -5) + 0.5*(abs(x)<=5) + 1*(x>5))
 y1 = cos(0.2*x) + tau
 y0 = cos(0.2*x)
 y = A*y1 + (1-A)*y0 + rnorm(n+nt, 0, 0.2)
@@ -31,8 +31,8 @@ ytest = ytrain; xtest = xtrain; ztest = ztrain; taute = tautr
 # run XBCF
 t1 = proc.time()
 burnin = 20;
-num_sweeps = 200
-num_trees_trt = 10
+num_sweeps = 100
+num_trees_trt = 1
 xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, 
                 pihat = NULL, pcat_con = 0,  pcat_mod = 0,
                 num_sweeps = num_sweeps, n_trees_mod = num_trees_trt, burnin = burnin)
@@ -60,17 +60,22 @@ cat('Coverage:', '\n')
 cat('GP = ', round(mean((gp.upper >= taute) & (gp.lower <= taute)), 3), '\n')
 cat('XBCF = ', round(mean((xbcf.upper >= taute) & (xbcf.lower <= taute)), 3), '\n')
 
-# plot(xtest, ytest, col = ztest+1)
-# readline()
-plot(xtest, taute, ylim = range(c(taute, tauhats.pred, tauhats.gp, gp.upper, gp.lower)), col = A+1, cex = 0.5)
+par(mfrow=c(1, 2))
+
+plot(xtest, taute, ylim = range(c(taute, tauhats.pred, tauhats.gp, gp.upper, gp.lower)), col = ztest+1, cex = 0.5)
 points(xtest, tauhats.gp, col = 5, cex = 0.5)
 points(xtest, tauhats.pred, col = 4, cex = 0.5) # the same ????
-# readline()
-legend('bottomright', col = 1:5, legend = c('control', 'treated', 'gp bound', 'xbcf', 'gp'), lty = 1)
+# points(xtest, gp.upper, col = 3, cex = 0.5)
+# points(xtest, gp.lower, col = 3, cex = 0.5)
 
-points(xtest, gp.upper, col = 3, cex = 0.5)
-points(xtest, gp.lower, col = 3, cex = 0.5)
-# readline()
+legend('bottom', inset = c(-0.3, 0),col = 1:5, legend = c('control', 'treated', 'gp bound', 'xbcf', 'gp'),  pch = 1, cex = 0.5)
 
-# points(xtest, rowMeans(pred.gp$mudraws), col = 5)
-# points(xtest, ytest - rowMeans(pred.gp$mudraws), col = 5)
+a = mean(xbcf.fit$a_draws)
+b0 = mean(xbcf.fit$b0_draws)
+b1 = mean(xbcf.fit$b1_draws)
+points(xtest, y0[1:n] - rowMeans(pred.gp$mudraws), col = 6, cex = 0.5)
+# points(xtest, y0[1:n], col = 6, cex = 0.5)
+# 
+plot(xtest, y0[1:n], col = ztest+1, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mudraws), col = 7, cex = 0.5)
+legend('topleft', cex = 0.5, pch = 1, col = c(1, 2, 7), legend = c('control', 'treated', 'mu_fit'))
