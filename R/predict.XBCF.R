@@ -313,7 +313,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     }
 
     if(!("matrix" %in% class(xtrain_con))) {
-        cat("Msg: input x_mod is not a matrix, try to convert type.\n")
+        cat("Msg: input x_con is not a matrix, try to convert type.\n")
         xtrain_con = as.matrix(xtrain_con)
     }
     if(!("matrix" %in% class(xtrain_mod))) {

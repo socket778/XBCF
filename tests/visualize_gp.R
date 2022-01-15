@@ -4,7 +4,7 @@ n = 500
 nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
 # tau = 5 + cos(0.5*x +1)
-tau =  -0.1*x
+tau =  0.1*x
 # A = rbinom(n+nt, 1, 0*(x>5) + 0.5*(abs(x)<=5) + 1*(x< -5))
 A = rbinom(n+nt, 1, 0*(x< -5) + 0.5*(abs(x)<=5) + 1*(x>5))
 y1 = cos(0.2*x) + tau
@@ -73,7 +73,7 @@ legend('bottom', inset = c(-0.3, 0),col = 1:5, legend = c('control', 'treated', 
 a = mean(xbcf.fit$a_draws)
 b0 = mean(xbcf.fit$b0_draws)
 b1 = mean(xbcf.fit$b1_draws)
-points(xtest, y0[1:n] - rowMeans(pred.gp$mudraws), col = 6, cex = 0.5)
+points(xtest, y[1:n] - rowMeans(pred.gp$mudraws), col = 6, cex = 0.5)
 # points(xtest, y0[1:n], col = 6, cex = 0.5)
 # 
 plot(xtest, y0[1:n], col = ztest+1, cex = 0.5)
