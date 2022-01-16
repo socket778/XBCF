@@ -73,7 +73,7 @@ legend('bottom', inset = c(-0.3, 0),col = 1:5, legend = c('control', 'treated', 
 a = mean(xbcf.fit$a_draws)
 b0 = mean(xbcf.fit$b0_draws)
 b1 = mean(xbcf.fit$b1_draws)
-points(xtest, y[1:n] - rowMeans(pred.gp$mudraws), col = 6, cex = 0.5)
+# points(xtest, y[1:n] - rowMeans(pred.gp$mudraws), col = ztest + 6, cex = 0.5)
 # points(xtest, y0[1:n], col = 6, cex = 0.5)
 # 
 plot(xtest, y0[1:n], col = ztest+1, cex = 0.5)

@@ -2070,41 +2070,58 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         //     }
         // }
 
-        // get training data from overlap area
-        std::vector<size_t> train_ind;
-        bool in_range;
+        // // get training data from overlap area
+        // std::vector<size_t> train_ind;
+        // bool in_range;
+        // for (size_t i = 0; i < N; i++){
+        //     in_range = true;
+        //     for (size_t j = 0; j < p; j++){
+        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > X_range[j][1] ){
+        //             in_range = false;
+        //         }
+        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) < X_range[j][0] ){
+        //             in_range = false;
+        //         }
+        //     }
+        //     if (in_range){
+        //         train_ind.push_back(Xorder_std[0][i]);
+        //     }
+        //     if (train_ind.size() >= 100){
+        //         break;
+        //     }
+        // }
+
+        // N = train_ind.size();
+        // if (N == 0){
+        //     return;
+        // }
+
+        std::vector<size_t> train_ind1;
+        std::vector<size_t> train_ind0;
         for (size_t i = 0; i < N; i++){
-            in_range = true;
-            for (size_t j = 0; j < p; j++){
-                if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > X_range[j][1] ){
-                    in_range = false;
-                }
-                if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) < X_range[j][0] ){
-                    in_range = false;
-                }
+            if (state->z[Xorder_std[0][i]] == 1){
+                train_ind1.push_back(Xorder_std[0][i]);
             }
-            if (in_range){
-                train_ind.push_back(Xorder_std[0][i]);
-            }
-            if (train_ind.size() >= 100){
-                break;
+            else{
+                train_ind0.push_back(Xorder_std[0][i]);
             }
         }
+        size_t N1 = train_ind1.size();
+        size_t N0 = train_ind0.size();
 
-        N = train_ind.size();
-        if (N == 0){
-            return;
-        }
-
-        mat X(N + Ntest, p_active);
+        mat X1(N1 + Ntest, p_active);
+        mat X0(N0 + Ntest, p_active);
         std::vector<double> x_range(p_active);
         const double *split_var_x_pointer;
         size_t j_count = 0;
         for (size_t j = 0; j < p_continuous; j++){
             if (active_var_left[j] | active_var_right[j]) {
                 split_var_x_pointer = x_struct->X_std + x_struct->n_y * j;
-                for (size_t i = 0; i < N; i++){
-                    X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
+                for (size_t i = 0; i < N1; i++){
+                    X1(i, j_count) = *(split_var_x_pointer + train_ind1[i]);
+                }
+                for (size_t i = 0; i < N0; i++){
+                    X0(i, j_count) = *(split_var_x_pointer + train_ind0[i]);
                 }
                 // x_range[j_count] = x_struct->X_range[j][1] - x_struct->X_range[j][0]; // fixed range scale
                 // flexible range scale per leaf node
@@ -2112,7 +2129,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
                 split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
                 for (size_t i = 0; i < Ntest; i++){
-                    X(i + N, j_count) = *(split_var_x_pointer + test_ind[i]);
+                    X1(i + N1, j_count) = *(split_var_x_pointer + test_ind[i]);
+                    X0(i + N0, j_count) = *(split_var_x_pointer + test_ind[i]);
                 }
                 
                 if (x_range[j_count] == 0){
@@ -2129,38 +2147,64 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             throw;
         }
 
-        mat resid(N, 1);
-        for (size_t i = 0; i < N; i++){
-            resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0];
+        mat resid1(N1, 1);
+        for (size_t i = 0; i < N1; i++){
+            resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0];
+            // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
+        }
+        mat resid0(N0, 1);
+        for (size_t i = 0; i < N0; i++){
+            resid0(i, 0) = state->residual[train_ind0[i]] - this->theta_vector[0];
             // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
         }
         
-        mat cov(N + Ntest, N + Ntest);
+        mat cov1(N1 + Ntest, N1 + Ntest);
+        mat cov0(N0 + Ntest, N0 + Ntest);
         // cout << "tau = " << tau << endl;
-        get_rel_covariance(cov, X, x_range, theta, tau); 
-        mat k = cov.submat(N, 0, N + Ntest - 1, N - 1); // cov[2:nrow(cov), 1]
-
+        get_rel_covariance(cov1, X1, x_range, theta, tau); 
+        get_rel_covariance(cov0, X0, x_range, theta, tau); 
         // Add diagonal term sigma^2 based on treated/control group
-        for (size_t i = 0; i < N; i++){
-            cov(i, i) += state->z[train_ind[i]] * pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[1]);
-            cov(i, i) += (1 - state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[0]);
+        for (size_t i = 0; i < N1; i++){
+            cov1(i, i) +=  pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[1]);
+           
         } 
-
-        mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));
-        // cout << "Kinv = " << Kinv << endl;
+        for (size_t i = 0; i < N0; i++){
+             cov0(i, i) += pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[0]);
+        }
         
-        mat mu = k * Kinv * resid;
-        // mat mu = k * resid; 
-
-        mat Sig =  cov.submat(N, N, N + Ntest - 1, N + Ntest - 1) - k * Kinv * trans(k);
         std::normal_distribution<double> normal_samp(0.0, 1.0);
-        // mat rnorm(Ntest , 1);
-        // for (size_t i = 0; i < Ntest; i++) { rnorm(i, 0) = normal_samp(x_struct->gen); }
+        std::vector<double> mu_draws1(Ntest);
+        if (N1 > 0){
+            mat Kinv1 = pinv(cov1.submat(0, 0, N1 - 1, N1 -1));
+            mat k1 = cov1.submat(N1, 0, N1 + Ntest - 1, N1 - 1);
+            mat mu1 = k1 * Kinv1 * resid1;
+            mat Sig1 =  cov1.submat(N1, N1, N1 + Ntest - 1, N1 + Ntest - 1) - k1 * Kinv1 * trans(k1);
+            for (size_t i = 0; i < Ntest; i++){
+                mu_draws1[i] = mu1(i) + pow(Sig1(i,i), 0.5)*normal_samp(state->gen);
+            }
+        }else{
+            for(size_t i = 0; i < Ntest; i++){
+                mu_draws1[i] = pow(cov1(i,i), 0.5)*normal_samp(state->gen);
+            }
+        }
 
-        // mat L = chol(Sig, "lower");
-        // mat mu_pred = mu + L * rnorm;
+        std::vector<double> mu_draws0(Ntest);
+        if (N0 > 0){
+            mat Kinv0 = pinv(cov0.submat(0, 0, N0 - 1, N0 -1));
+            mat k0 = cov0.submat(N0, 0, N0 + Ntest - 1, N0 - 1);
+            mat mu0 = k0 * Kinv0 * resid0;
+            mat Sig0 =  cov0.submat(N0, N0, N0 + Ntest - 1, N0 + Ntest - 1) - k0 * Kinv0 * trans(k0);
+            for (size_t i = 0; i < Ntest; i++){
+                mu_draws0[i] = mu0(i) + pow(Sig0(i,i), 0.5)*normal_samp(state->gen);
+            }
+        }else{
+            for(size_t i = 0; i < Ntest; i++){
+                mu_draws0[i] = pow(cov0(i,i), 0.5)*normal_samp(state->gen);
+            }
+        }
+
         for (size_t i = 0; i < Ntest; i++){
-            yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen);
+            yhats_test_xinfo[test_ind[i]] += mu_draws1[i] - mu_draws0[i];
         }
     }
 
