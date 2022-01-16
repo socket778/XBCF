@@ -2096,6 +2096,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         //     return;
         // }
 
+        // get separate training set for treated and control group
         std::vector<size_t> train_ind1;
         std::vector<size_t> train_ind0;
         for (size_t i = 0; i < N; i++){
@@ -2149,12 +2150,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         mat resid1(N1, 1);
         for (size_t i = 0; i < N1; i++){
-            resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0];
+            resid1(i, 0) = (state->residual[train_ind1[i]] - this->theta_vector[0]);
+            // resid1(i, 0) = (state->residual[train_ind1[i]] - this->theta_vector[0]) * state->b_vec[1];
             // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
         }
         mat resid0(N0, 1);
         for (size_t i = 0; i < N0; i++){
-            resid0(i, 0) = state->residual[train_ind0[i]] - this->theta_vector[0];
+            resid0(i, 0) = (state->residual[train_ind0[i]] - this->theta_vector[0]);
+            // resid0(i, 0) = (state->residual[train_ind0[i]] - this->theta_vector[0]) * state->b_vec[0];
             // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
         }
         
@@ -2184,7 +2187,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }
         }else{
             for(size_t i = 0; i < Ntest; i++){
-                mu_draws1[i] = pow(cov1(i,i), 0.5)*normal_samp(state->gen);
+                mu_draws1[i] = pow(cov1(i,i), 0.5)*normal_samp(state->gen); // prior
             }
         }
 
@@ -2199,7 +2202,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }
         }else{
             for(size_t i = 0; i < Ntest; i++){
-                mu_draws0[i] = pow(cov0(i,i), 0.5)*normal_samp(state->gen);
+                mu_draws0[i] = pow(cov0(i,i), 0.5)*normal_samp(state->gen); // prior
             }
         }
 
