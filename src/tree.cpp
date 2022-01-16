@@ -2038,58 +2038,58 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         }
         
         // get training set
-        // std::vector<size_t> train_ind;
-        // if (N < 100) {
-        //     train_ind.resize(N);
-        //     std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
-        // }
-        // else {
-        //     // get training set that's most adjacent to outliers on active variables
-        //     size_t N_active = 100 / p_active; // number of data to get per active var 
-        //     N = N_active * p_active;
-        //     train_ind.resize(N);
-        //     size_t i_count = 0;
-        //     for (size_t i = 0; i < p_continuous; i++){
-        //         // if test points are out-of-range on both side
-        //         if (active_var_left[i] & active_var_right[i]){
-        //               // uniformly get values on variable i
-        //                 for (size_t j = 0; j < N_active; j++){
-        //                     train_ind[i_count + j] = Xorder_std[i][j * Xorder_std[i].size() / N_active];
-        //                 }
-        //         }
-        //         else if (active_var_left[i]){
-        //             // get the smallest values (the first N_active obs in Xorder_std[i])
-        //             std::copy(Xorder_std[i].begin(), Xorder_std[i].begin() + N_active, train_ind.begin() + i_count);
-        //             i_count += N_active;
-        //         }
-        //         else if (active_var_right[i]) {
-        //             // get the largest values 
-        //             std::copy(Xorder_std[i].end() - N_active, Xorder_std[i].end(), train_ind.begin() + i_count);   
-        //             i_count += N_active;   
-        //         }   
-        //     }
-        // }
-
-        // get training data from overlap area
         std::vector<size_t> train_ind;
-        bool in_range;
-        for (size_t i = 0; i < N; i++){
-            in_range = true;
-            for (size_t j = 0; j < p; j++){
-                if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > X_range[j][1] ){
-                    in_range = false;
+        if (N < 100) {
+            train_ind.resize(N);
+            std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
+        }
+        else {
+            // get training set that's most adjacent to outliers on active variables
+            size_t N_active = 100 / p_active; // number of data to get per active var 
+            N = N_active * p_active;
+            train_ind.resize(N);
+            size_t i_count = 0;
+            for (size_t i = 0; i < p_continuous; i++){
+                // if test points are out-of-range on both side
+                if (active_var_left[i] & active_var_right[i]){
+                      // uniformly get values on variable i
+                        for (size_t j = 0; j < N_active; j++){
+                            train_ind[i_count + j] = Xorder_std[i][j * Xorder_std[i].size() / N_active];
+                        }
                 }
-                if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) < X_range[j][0] ){
-                    in_range = false;
+                else if (active_var_left[i]){
+                    // get the smallest values (the first N_active obs in Xorder_std[i])
+                    std::copy(Xorder_std[i].begin(), Xorder_std[i].begin() + N_active, train_ind.begin() + i_count);
+                    i_count += N_active;
                 }
-            }
-            if (in_range){
-                train_ind.push_back(Xorder_std[0][i]);
-            }
-            if (train_ind.size() >= 100){
-                break;
+                else if (active_var_right[i]) {
+                    // get the largest values 
+                    std::copy(Xorder_std[i].end() - N_active, Xorder_std[i].end(), train_ind.begin() + i_count);   
+                    i_count += N_active;   
+                }   
             }
         }
+
+        // // get training data from overlap area
+        // std::vector<size_t> train_ind;
+        // bool in_range;
+        // for (size_t i = 0; i < N; i++){
+        //     in_range = true;
+        //     for (size_t j = 0; j < p; j++){
+        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > X_range[j][1] ){
+        //             in_range = false;
+        //         }
+        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) < X_range[j][0] ){
+        //             in_range = false;
+        //         }
+        //     }
+        //     if (in_range){
+        //         train_ind.push_back(Xorder_std[0][i]);
+        //     }
+        //     if (train_ind.size() >= 100){
+        //         break;
+        //     }
+        // }
 
         N = train_ind.size();
         if (N == 0){
@@ -2131,8 +2131,11 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
 
         mat resid(N, 1);
         for (size_t i = 0; i < N; i++){
-            resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0];
-            // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
+            if (state->z[train_ind[i]]==1){
+                resid(i, 0) = (state->residual[train_ind[i]]  - this->theta_vector[0]) * state->b_vec[1];
+            }else{
+                resid(i, 0) = (state->residual[train_ind[i]] - this->theta_vector[0]) * state->b_vec[0];
+            }
         }
         
         mat cov(N + Ntest, N + Ntest);
