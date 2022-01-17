@@ -22,6 +22,8 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     std::unique_ptr<X_struct> &xtest_struct_trt,
                     matrix<double> &mu_fit_std,
                     matrix<double> &yhats_test_xinfo,
-                    std::vector<std::vector<double>> X_range,
+                    std::vector<double> &pitrain,
+                    std::vector<double> &pitest, 
+                    std::vector<double> &pirange, 
                     const double &theta, const double &tau
                     );

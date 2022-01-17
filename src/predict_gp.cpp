@@ -21,7 +21,9 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
                     std::unique_ptr<X_struct> &xtest_struct_trt,
                     matrix<double> &mu_fit_std,
                     matrix<double> &yhats_test_xinfo,
-                    std::vector<std::vector<double>> X_range,
+                    std::vector<double> &pitrain,
+                    std::vector<double> &pitest, 
+                    std::vector<double> &pirange, 
                     const double &theta, const double &tau
                     )
 {
@@ -106,7 +108,7 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             // assign predicted values to data_pointers
             trees_trt[sweeps][tree_ind].predict_from_root_gp(Xorder_tau_std, x_struct_trt, x_struct_trt->X_counts, x_struct_trt->X_num_unique, 
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
-            state, X_range, active_var, yhats_test_xinfo[sweeps], state->p_categorical, tree_ind, theta, tau);
+            state, pitrain, pitest, pirange, active_var, yhats_test_xinfo[sweeps], state->p_categorical, tree_ind, theta, tau);
             
             // // check residuals and theta value
             // bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, 0, state->p, Xorder_tau_std[0].size());
@@ -144,7 +146,7 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
 
 // [[Rcpp::export]]
 Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, // a_draws, b_draws,
-                    mat mu_fit, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
+                    mat mu_fit, mat pitrain, mat pitest, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
                     double theta, double tau, size_t p_categorical = 0,
                     bool verbose = false, bool parallel = true, bool set_random_seed = false, size_t random_seed = 0)
 {
@@ -161,7 +163,6 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     ini_matrix(Xorder_std, N, p);
 
     std::vector<double> y_std(N);
-    std::vector<size_t> z_std(N);
     std::vector<double> b(N);
     double y_mean = 0.0;
 
@@ -246,6 +247,7 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     b_vec[1] = bscale1;
 
     size_t n_trt = 0; // number of treated individuals TODO: remove from here and from constructor as well
+    std::vector<size_t> z_std(N);
     for (size_t i = 0; i < N; i++)
     {
         z_std[i] = z(i, 0);
@@ -254,12 +256,32 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
             n_trt++;
     }
 
+    std::vector<double> pitr_std(N);
+    for (size_t i = 0; i < N; i++){
+        pitr_std[i] = pitrain(i, 0);
+    }
+    std::vector<double> pite_std(N_test);
+    for (size_t i = 0; i < N_test; i++){
+        pite_std[i] = pitest(i, 0);
+    }
+
     // Get X_range
     std::vector<std::vector<double>> X_range;
     get_overlap(Xpointer, Xorder_std, z_std, X_range);
-    // get_treated_range(Xpointer, Xorder_std, z_std, X_range);
-    // cout << "X-range = " << X_range << endl;
-    
+    // get range for propenstiy scor,e
+    std::vector<double> pirange(2);// overlap range
+    // lower bound of pi range is defined by the smallest pi value in treatment group
+    // upper bound of pi range is defnied by the largest pi value in the control group
+    pirange[0] = 1; 
+    pirange[1] = 0;
+    for (size_t i = 0; i < N; i++){
+        if (z_std[i] == 1){
+            pirange[0] = pitr_std[i] < pirange[0] ? pitr_std[i] : pirange[0];
+        }
+        else{
+            pirange[1] = pitr_std[i] > pirange[1] ? pitr_std[i] : pirange[1];
+        }
+    }
     // State settings for the prognostic term
     std::unique_ptr<State> state(new xbcfState(Xpointer, Xorder_std, N, n_trt, p, p, num_trees_vec, p_categorical, p_categorical, 
                                 p_continuous, p_continuous, set_random_seed, random_seed, 0, 1, parallel, p, p, Xpointer, 
@@ -283,7 +305,8 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     std::fill(active_var.begin(), active_var.end(), false);
 
     mcmc_loop_gp(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
-                a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, mu_fit_std, yhats_test_xinfo, X_range, theta, tau);
+                a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, mu_fit_std, yhats_test_xinfo, 
+                pitr_std, pite_std, pirange, theta, tau);
 
     Rcpp::NumericMatrix yhats_test(N_test, num_sweeps);
     std_to_rcpp(yhats_test_xinfo, yhats_test);

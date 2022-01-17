@@ -391,7 +391,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     objtr = .Call(`_XBCF_xbcf_predict`, xtrain_con, model$model_list$tree_pnt_pr)
     # change this to predict.gp
     # model$sigma0_draws, sigma1_draws
-    obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, objtr$predicted_values,
+    obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, objtr$predicted_values, model$pihat, pihat_te, 
                 model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b0_draws, model$b1_draws,
                 theta, tau, model$model_params$p_categorical_trt,
                 verbose, parallel, set_random_seed, random_seed)

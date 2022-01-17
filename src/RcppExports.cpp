@@ -13,8 +13,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // predict_gp
-Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, mat mu_fit, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws, double theta, double tau, size_t p_categorical, bool verbose, bool parallel, bool set_random_seed, size_t random_seed);
-RcppExport SEXP _XBCF_predict_gp(SEXP ySEXP, SEXP zSEXP, SEXP XSEXP, SEXP XtestSEXP, SEXP tree_pntSEXP, SEXP mu_fitSEXP, SEXP sigma0_drawsSEXP, SEXP sigma1_drawsSEXP, SEXP a_drawsSEXP, SEXP b0_drawsSEXP, SEXP b1_drawsSEXP, SEXP thetaSEXP, SEXP tauSEXP, SEXP p_categoricalSEXP, SEXP verboseSEXP, SEXP parallelSEXP, SEXP set_random_seedSEXP, SEXP random_seedSEXP) {
+Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, mat mu_fit, mat pitrain, mat pitest, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws, double theta, double tau, size_t p_categorical, bool verbose, bool parallel, bool set_random_seed, size_t random_seed);
+RcppExport SEXP _XBCF_predict_gp(SEXP ySEXP, SEXP zSEXP, SEXP XSEXP, SEXP XtestSEXP, SEXP tree_pntSEXP, SEXP mu_fitSEXP, SEXP pitrainSEXP, SEXP pitestSEXP, SEXP sigma0_drawsSEXP, SEXP sigma1_drawsSEXP, SEXP a_drawsSEXP, SEXP b0_drawsSEXP, SEXP b1_drawsSEXP, SEXP thetaSEXP, SEXP tauSEXP, SEXP p_categoricalSEXP, SEXP verboseSEXP, SEXP parallelSEXP, SEXP set_random_seedSEXP, SEXP random_seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -24,6 +24,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< mat >::type Xtest(XtestSEXP);
     Rcpp::traits::input_parameter< Rcpp::XPtr<std::vector<std::vector<tree>>> >::type tree_pnt(tree_pntSEXP);
     Rcpp::traits::input_parameter< mat >::type mu_fit(mu_fitSEXP);
+    Rcpp::traits::input_parameter< mat >::type pitrain(pitrainSEXP);
+    Rcpp::traits::input_parameter< mat >::type pitest(pitestSEXP);
     Rcpp::traits::input_parameter< mat >::type sigma0_draws(sigma0_drawsSEXP);
     Rcpp::traits::input_parameter< mat >::type sigma1_draws(sigma1_drawsSEXP);
     Rcpp::traits::input_parameter< mat >::type a_draws(a_drawsSEXP);
@@ -36,7 +38,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< bool >::type set_random_seed(set_random_seedSEXP);
     Rcpp::traits::input_parameter< size_t >::type random_seed(random_seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(predict_gp(y, z, X, Xtest, tree_pnt, mu_fit, sigma0_draws, sigma1_draws, a_draws, b0_draws, b1_draws, theta, tau, p_categorical, verbose, parallel, set_random_seed, random_seed));
+    rcpp_result_gen = Rcpp::wrap(predict_gp(y, z, X, Xtest, tree_pnt, mu_fit, pitrain, pitest, sigma0_draws, sigma1_draws, a_draws, b0_draws, b1_draws, theta, tau, p_categorical, verbose, parallel, set_random_seed, random_seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -174,7 +176,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_XBCF_predict_gp", (DL_FUNC) &_XBCF_predict_gp, 18},
+    {"_XBCF_predict_gp", (DL_FUNC) &_XBCF_predict_gp, 20},
     {"_XBCF_xbcf_predict", (DL_FUNC) &_XBCF_xbcf_predict, 2},
     {"_XBCF_r_to_json", (DL_FUNC) &_XBCF_r_to_json, 2},
     {"_XBCF_json_to_r", (DL_FUNC) &_XBCF_json_to_r, 1},
