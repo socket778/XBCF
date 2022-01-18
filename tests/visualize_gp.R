@@ -39,7 +39,7 @@ xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain,
                 num_sweeps = num_sweeps, n_trees_mod = num_trees_trt, n_trees_con = num_trees_pr, burnin = burnin)
 tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt + xbcf.fit$model_params$num_trees_pr) 
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
-                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 0.5, tau = 10*tau_gp, verbose = FALSE)
+                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 5, tau = tau_gp, verbose = FALSE)
 # pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
 t1 = proc.time() - t1
 
