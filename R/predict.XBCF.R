@@ -386,13 +386,21 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     } else {
         y = y / model$sdy
     }
+    mutr = .Call(`_XBCF_xbcf_predict`, xtrain_con, model$model_list$tree_pnt_pr)
+    tautr = .Call(`_XBCF_xbcf_predict`, xtrain_mod, model$model_list$tree_pnt_trt)
+    objmu = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
 
-    obj1 = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
-    objtr = .Call(`_XBCF_xbcf_predict`, xtrain_con, model$model_list$tree_pnt_pr)
-    # change this to predict.gp
-    # model$sigma0_draws, sigma1_draws
-    obj2 = .Call(`_XBCF_predict_gp`, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, objtr$predicted_values, model$pihat, pihat_te, 
-                model$sigma0_draws, model$sigma1_draws, model$a_draws, model$b0_draws, model$b1_draws,
+    obj1 = .Call(`_XBCF_predict_gp`, 0, y, z, xtrain_con, x_con, model$model_list$tree_pnt_pr, 
+                tautr$predicted_values, model$pihat, pihat_te, 
+                model$sigma0_draws, model$sigma1_draws, 
+                model$a_draws, model$b0_draws, model$b1_draws,
+                theta, tau, model$model_params$p_categorical_trt,
+                verbose, parallel, set_random_seed, random_seed)
+
+    obj2 = .Call(`_XBCF_predict_gp`, 1, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, 
+                mutr$predicted_values, model$pihat, pihat_te, 
+                model$sigma0_draws, model$sigma1_draws, 
+                model$a_draws, model$b0_draws, model$b1_draws,
                 theta, tau, model$model_params$p_categorical_trt,
                 verbose, parallel, set_random_seed, random_seed)
 
@@ -405,16 +413,23 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    mus <- matrix(NA, nrow(x_con), sweeps - burnin)
-    taus <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    mu.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)
+    tau.adjusted <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    tau.old <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
+    mu0.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)
+    mu1.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)    
+
     for (i in seq) {
-        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
-        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        tau.old[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
+        mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        mu0.adjusted[, i - burnin] = obj1$mu0[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        mu1.adjusted[, i - burnin] = obj1$mu1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        tau.adjusted[, i - burnin] = (obj2$predicted_values[,i] + obj1$mu1[,i] - obj1$mu0[,i] ) * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i]) 
     }
 
-    obj <- list(mudraws=mus, taudraws=taus)
+    obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted, mu0 = mu0.adjusted, mu1 = mu1.adjusted, tau.old = tau.old)
 
     return(obj)
 }

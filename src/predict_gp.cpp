@@ -7,7 +7,7 @@
 
 using namespace arma;
 
-void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau_std,
+void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau_std,
                     const double *X_tau_std, const double *Xtest_tau_std,
                     bool verbose,
                     matrix<double> &sigma0_draw_xinfo,
@@ -96,11 +96,11 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
             for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 if (state->z[i] == 1)
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]) / state->b_vec[1];
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
                 }
                 else
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]) / state->b_vec[0];
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
                 }
             }
             std::fill(active_var.begin(), active_var.end(), false);
@@ -144,9 +144,132 @@ void mcmc_loop_gp(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_tau
     return;
     }
 
+
+void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
+                    const double *X_std, const double *Xtest_std,
+                    bool verbose,
+                    matrix<double> &sigma0_draw_xinfo,
+                    matrix<double> &sigma1_draw_xinfo,
+                    matrix<double> &a_xinfo,
+                    matrix<double> &b0_xinfo,
+                    matrix<double> &b1_xinfo,
+                    vector<vector<tree>> &trees_pr,
+                    std::unique_ptr<State> &state,
+                    std::unique_ptr<X_struct> &x_struct_pr,
+                    std::unique_ptr<X_struct> &xtest_struct_pr,
+                    matrix<double> &tau_fit_std,
+                    matrix<double> &mu1_test_xinfo,
+                    matrix<double> &mu0_test_xinfo,
+                    std::vector<double> &pitrain,
+                    std::vector<double> &pitest, 
+                    std::vector<double> &pirange, 
+                    const double &theta, const double &tau
+                    )
+{
+    //cout << "size of Xorder std " << Xorder_std.size() << endl;
+    //cout << "size of Xorder tau " << Xorder_tau_std.size() << endl;
+    if (state->parallel)
+        thread_pool.start();
+
+    // model_trt->set_state_status(state, 1, X_tau_std, Xorder_tau_std);
+    state->fl = 0; // value can only be 0 or 1 (to alternate between arms)
+    state->X_std = X_std;
+    state->Xorder_std = Xorder_std;
+    state->p = state->p_pr;
+    state->p_categorical = state->p_categorical_pr;
+    state->p_continuous = state->p_continuous_pr;
+
+    tree::tree_p bn; // pointer to bottom node
+    std::vector<bool> active_var(state->p);
+
+    for (size_t sweeps = 0; sweeps < state->num_sweeps; sweeps++)
+    {
+        //cout << "sweep: " << sweeps << endl;
+        if (verbose == true)
+        {
+            COUT << "--------------------------------" << endl;
+            COUT << "number of sweeps " << sweeps << endl;
+            COUT << "--------------------------------" << endl;
+        }
+
+        ////////////// Prognostic term loop
+        for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
+        {
+            if (verbose == true)
+            {
+                COUT << "--------------------------------" << endl;
+                COUT << "number of trees " << tree_ind << endl;
+                COUT << "--------------------------------" << endl;
+            }
+            // state->update_residuals(); // update residuals
+            state->update_sigma(sigma0_draw_xinfo[sweeps][tree_ind], 0);
+            state->update_sigma(sigma1_draw_xinfo[sweeps][tree_ind], 1);
+
+            // subtract_old_tree_fit
+            for (size_t i = 0; i < state->mu_fit.size(); i++)
+            {
+                state->mu_fit[i] -= (*(x_struct_pr->data_pointers[tree_ind][i]))[0];
+            }
+            // update parital residuals here based on subtracted tau_fit
+            for (size_t i = 0; i < Xorder_std[0].size(); i++){
+                if (state->z[i] == 1)
+                {
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
+                }
+                else
+                {
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
+                }
+            }
+            std::fill(active_var.begin(), active_var.end(), false);
+
+            // assign predicted values to data_pointers
+            trees_pr[sweeps][tree_ind].predict_from_2gp(Xorder_std, x_struct_pr, x_struct_pr->X_counts, x_struct_pr->X_num_unique, 
+            Xtestorder_std, xtest_struct_pr, xtest_struct_pr->X_counts, xtest_struct_pr->X_num_unique,
+            state, pitrain, pitest, pirange, active_var, mu0_test_xinfo[sweeps], mu1_test_xinfo[sweeps], tree_ind, theta, tau);
+            
+            // // check residuals and theta value
+            bn = trees_pr[sweeps][tree_ind].search_bottom_std(x_struct_pr->X_std, 0, state->p, Xorder_std[0].size());
+            x_struct_pr->data_pointers[tree_ind][0] = &bn->theta_vector;
+            // if (state->z[0] == 1){
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " theta = " << (*(x_struct_pr->data_pointers[tree_ind][0]))[0] << endl;
+            // }
+            // else{
+            //     cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " theta = " << (*(x_struct_pr->data_pointers[tree_ind][0]))[0] << endl;
+            // }
+            
+            // update parital residuals here based on subtracted tau_fit
+            for (size_t i = 0; i < Xorder_std[0].size();i++){
+                bn = trees_pr[sweeps][tree_ind].search_bottom_std(x_struct_pr->X_std, i, state->p, Xorder_std[0].size());
+                x_struct_pr->data_pointers[tree_ind][i] = &bn->theta_vector;
+                state->mu_fit[i] += (*(x_struct_pr->data_pointers[tree_ind][i]))[0];
+            }
+
+            // update a, b0 and b1
+            state->a = a_xinfo[sweeps][tree_ind];
+            state->b_vec[0] = b0_xinfo[sweeps][tree_ind];
+            state->b_vec[1] = b1_xinfo[sweeps][tree_ind];
+        }
+
+        ///////////////////////////////////////////////////////////////////////////
+        // Input predicted values from mu trees to replace mu_fit
+        std::copy(tau_fit_std[sweeps].begin(), tau_fit_std[sweeps].end(), state->tau_fit.begin());
+        ///////////////////////////////////////////////////////////////////////////
+        // update a, b0 and b1
+        state->a = a_xinfo[sweeps][state->num_trees_vec[0] + state->num_trees_vec[1] - 1];
+        state->b_vec[0] = b0_xinfo[sweeps][state->num_trees_vec[0] + state->num_trees_vec[1] - 1];
+        state->b_vec[1] = b1_xinfo[sweeps][state->num_trees_vec[0] + state->num_trees_vec[1] - 1];
+
+    }
+
+    thread_pool.stop();
+    return;
+    }
+
+
 // [[Rcpp::export]]
-Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, // a_draws, b_draws,
-                    mat mu_fit, mat pitrain, mat pitest, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
+Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, // a_draws, b_draws,
+                    mat partial_fit, mat pitrain, mat pitest, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
                     double theta, double tau, size_t p_categorical = 0,
                     bool verbose = false, bool parallel = true, bool set_random_seed = false, size_t random_seed = 0)
 {
@@ -192,8 +315,8 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     size_t num_sweeps = (*trees).size();
     size_t num_trees = (*trees)[0].size();
     std::vector<size_t> num_trees_vec(2); // vector of tree number for each of mu and tau
-    num_trees_vec[0] = sigma0_draws.n_rows - num_trees;
-    num_trees_vec[1] = num_trees;
+    num_trees_vec[1 - fl] = sigma0_draws.n_rows - num_trees;
+    num_trees_vec[fl] = num_trees;
 
     // Create sigma0/1_draw_xinfo
     matrix<double> sigma0_draw_xinfo;
@@ -226,11 +349,11 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     double *Xpointer = &X_std[0];
     double *Xtestpointer = &Xtest_std[0]; 
 
-    matrix<double> mu_fit_std;
-    ini_matrix(mu_fit_std, N, num_sweeps);
+    matrix<double> partial_fit_std;
+    ini_matrix(partial_fit_std, N, num_sweeps);
     for (size_t i = 0; i < num_sweeps; i++){
         for (size_t j = 0; j < N; j++){
-            mu_fit_std[i][j] = mu_fit(j, i);
+            partial_fit_std[i][j] = partial_fit(j, i);
         }
     }
     ///////////////////////////////////////////////////////////////////
@@ -294,22 +417,50 @@ Rcpp::List predict_gp(mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std
     x_struct->n_y = N;
     xtest_struct->n_y = N_test;
 
+    if (fl == 0){
 
-    matrix<double> yhats_test_xinfo;
-    ini_matrix(yhats_test_xinfo, N_test, num_sweeps);
-    for (size_t i = 0; i < num_sweeps; i++){
-        std::fill(yhats_test_xinfo[i].begin(), yhats_test_xinfo[i].end(), 0.0);
+        matrix<double> mu0_test_xinfo;
+        matrix<double> mu1_test_xinfo;
+        ini_matrix(mu0_test_xinfo, N_test, num_sweeps);
+        ini_matrix(mu1_test_xinfo, N_test, num_sweeps);
+        for (size_t i = 0; i < num_sweeps; i++){
+            std::fill(mu0_test_xinfo[i].begin(), mu0_test_xinfo[i].end(), 0.0);
+            std::fill(mu1_test_xinfo[i].begin(), mu1_test_xinfo[i].end(), 0.0);
+        }
+
+        std::vector<bool> active_var(p);
+        std::fill(active_var.begin(), active_var.end(), false);
+
+        mcmc_loop_pr(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
+                    a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, partial_fit_std, mu0_test_xinfo, mu1_test_xinfo, 
+                    pitr_std, pite_std, pirange, theta, tau);
+
+        Rcpp::NumericMatrix mu0_test(N_test, num_sweeps);
+        Rcpp::NumericMatrix mu1_test(N_test, num_sweeps);
+        std_to_rcpp(mu0_test_xinfo, mu0_test);
+        std_to_rcpp(mu1_test_xinfo, mu1_test);
+
+        return Rcpp::List::create(Rcpp::Named("mu0") = mu0_test, Rcpp::Named("mu1") = mu1_test);
+
+    }else{
+        matrix<double> yhats_test_xinfo;
+        ini_matrix(yhats_test_xinfo, N_test, num_sweeps);
+        for (size_t i = 0; i < num_sweeps; i++){
+            std::fill(yhats_test_xinfo[i].begin(), yhats_test_xinfo[i].end(), 0.0);
+        }
+
+        std::vector<bool> active_var(p);
+        std::fill(active_var.begin(), active_var.end(), false);
+
+        mcmc_loop_trt(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
+                    a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, partial_fit_std, yhats_test_xinfo, 
+                    pitr_std, pite_std, pirange, theta, tau);
+
+        Rcpp::NumericMatrix yhats_test(N_test, num_sweeps);
+        std_to_rcpp(yhats_test_xinfo, yhats_test);
+
+        return Rcpp::List::create(Rcpp::Named("predicted_values") = yhats_test);
     }
-
-    std::vector<bool> active_var(p);
-    std::fill(active_var.begin(), active_var.end(), false);
-
-    mcmc_loop_gp(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
-                a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, mu_fit_std, yhats_test_xinfo, 
-                pitr_std, pite_std, pirange, theta, tau);
-
-    Rcpp::NumericMatrix yhats_test(N_test, num_sweeps);
-    std_to_rcpp(yhats_test_xinfo, yhats_test);
-
-    return Rcpp::List::create(Rcpp::Named("predicted_values") = yhats_test);
+    
 }
+

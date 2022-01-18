@@ -32,28 +32,27 @@ tautr = tau[1:n]; taute = tau[(n+1):(n+nt)]
 ytest = ytrain; xtest = xtrain; ztest = ztrain; taute = tautr; pihat_te = pihat_tr
 # run XBCF
 t1 = proc.time()
-burnin = 20;
-num_sweeps = 100
-num_trees_trt = 10
+burnin = 10; num_sweeps = 30; num_trees_trt = 10; num_trees_pr = 10
+# burnin = 20; num_sweeps = 100; num_trees_trt = 10; num_trees_pr = 10
 xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, 
                 pihat = pihat_tr, pcat_con = 0,  pcat_mod = 0,
-                num_sweeps = num_sweeps, n_trees_mod = num_trees_trt, burnin = burnin)
+                num_sweeps = num_sweeps, n_trees_mod = num_trees_trt, n_trees_con = num_trees_pr, burnin = burnin)
 tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt + xbcf.fit$model_params$num_trees_pr) 
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
-                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 1, tau = tau_gp, verbose = FALSE)
+                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 0.5, tau = 10*tau_gp, verbose = FALSE)
 # pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
 t1 = proc.time() - t1
 
 pred = predict.XBCF(xbcf.fit, xtest, xtest, pihat = NULL)
 tauhats.pred <- rowMeans(pred$taudraws)
-tauhats.gp <- rowMeans(pred.gp$taudraws)
+tauhats.gp <- rowMeans(pred.gp$tau.adjusted)
 
 # true tau?
 cat('True ATE:, ', round(mean(taute), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3), '\n')
 
-gp.upper <- apply(pred.gp$taudraws, 1, quantile, 0.975, na.rm = TRUE)
-gp.lower <- apply(pred.gp$taudraws, 1, quantile, 0.025, na.rm = TRUE)
+gp.upper <- apply(pred.gp$tau.adjusted, 1, quantile, 0.975, na.rm = TRUE)
+gp.lower <- apply(pred.gp$tau.adjusted, 1, quantile, 0.025, na.rm = TRUE)
 xbcf.upper <- apply(pred$taudraws, 1, quantile, 0.975, na.rm = TRUE)
 xbcf.lower <- apply(pred$taudraws, 1, quantile, 0.025, na.rm = TRUE)
 
@@ -64,19 +63,54 @@ cat('XBCF = ', round(mean((xbcf.upper >= taute) & (xbcf.lower <= taute)), 3), '\
 
 par(mfrow=c(1,2))
 plot(xtest, y0[1:n], col = 1, cex = 0.5, ylim = range(y))
-points(xtest, rowMeans(pred.gp$mudraws) , col = 3, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu.adjusted) , col = 3, cex = 0.5)
 points(xtest, rowMeans(pred$mudraws), col = 4, cex = 0.5)
 
 plot(xtest, y1[1:n], col = 1, cex = 0.5, ylim = range(y))
-points(xtest, rowMeans(pred.gp$mudraws) + rowMeans(pred.gp$taudraws), col = 3, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu.adjusted) + rowMeans(pred.gp$tau.adjusted), col = 3, cex = 0.5)
 points(xtest, rowMeans(pred$mudraws) + rowMeans(pred$taudraws), col = 4, cex = 0.5)
 legend('topleft', cex = 0.5, pch = 1, col = c(1, 3, 4), legend = c('y1', 'gp','xbcf'))
 
 
 par(mfrow=c(1,1))
 plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5)
-points(xtest, rowMeans(pred.gp$taudraws), col = 3, cex = 0.5)
+points(xtest, rowMeans(pred.gp$tau.old), col = 3, cex = 0.5)
 points(xtest, rowMeans(pred$taudraws), col = 4, cex = 0.5)
-legend('topleft', cex = 0.5, pch = 1, col = c(1, 3, 4), legend = c('y1 - y0', 'gp','xbcf'))
+points(xtest, rowMeans(pred.gp$tau.adjusted), col = 6, cex = 0.5)
+legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 3, 6), 
+       legend = c('y1 - y0', 'tau.xbcf','tau.gp','tau.gp+mu1-mu0'))
 
-
+# 
+# par(mfrow=c(1,1))
+# plot(xtest, y[1:n], cex = 0.5, col = ztest + 1, ylim = range(rowMeans(pred.gp$mu0), rowMeans(pred.gp$mu1)))
+# points(xtest, rowMeans(pred.gp$mu0) , cex = 0.5, col = 3) #+ ztest * rowMeans(pred.gp$tau.old)
+# points(xtest, rowMeans(pred.gp$mu1), cex = 0.5, col = 4)
+# # points(xtest, rowMeans(pred.gp$mu.adjusted)+ ztest*rowMeans(pred.gp$tau.old), cex = 0.5, col = 3)
+# legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4), legend = c('y[ztest==0]', 'y[ztest==1]', 'mu0', 'mu1' ))
+# 
+# tau.adjust = rowMeans(pred.gp$tau.adjusted) + 
+#   ztest * (rowMeans(pred.gp$mu.adjusted - pred.gp$mu1)) + 
+#   (1-ztest) * rowMeans(pred.gp$mu0 - pred.gp$mu.adjusted)
+# 
+# plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1)
+# points(xtest, tau.adjust, col = 3)
+# points(xtest, rowMeans(pred.gp$tau.old), col = 4)
+# 
+# # plot mu0 against y - tau_fit on control
+# # plot mu1 against y- tau_fit on treated
+# # see how they are affected by the poorly estimated mean and how the wrong info accumulate
+# plot(xtest, rowMeans(pred.gp$mu0), col = 3)
+# points(xtest, y0[1:n],col = 1+ztest )
+# points(xtest, rowMeans(pred.gp$mu1), col = 4)
+# points(xtest, rowMeans(pred.gp$mu.adjusted), col =5)
+# # 
+# 
+# # par(mfrow=c(1,2))
+# plot(xtest, rowMeans(pred.gp$mu1) + rowMeans(pred.gp$tau.old), col = 3, ylim = range(y))
+# points(xtest, y1[1:n] , col = 1 + ztest)
+# #
+# plot(xtest, y[1:n] - ztest * rowMeans(pred.gp$tau.old) - rowMeans(pred.gp$mu.adjusted)/2, col = 1 + ztest, ylim = range(pred.gp$mu0, pred.gp$mu1))
+# points(xtest, rowMeans(pred.gp$mu0) - rowMeans(pred.gp$mu.adjusted), col = 3)
+# points(xtest, rowMeans(pred.gp$mu1)- rowMeans(pred.gp$mu.adjusted), col = 4)
+# legend
+# 
