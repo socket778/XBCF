@@ -432,12 +432,21 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         mu1.adjusted[, i - burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
         tau0.adjusted[, i - burnin] = objtau.gp$y0[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
         tau1.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
+        # tau0.adjusted[, i - burnin] = objtau.gp$y0[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i])
+        # tau1.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * (model$b0_draws[nrow(model$b0_draws), i])
+        
         tau.adjusted[, i - burnin] = objtau$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
         tau.4gp[, i - burnin] = tau.adjusted[, i-burnin] + mu1.adjusted[,i-burnin] - mu0.adjusted[, i-burnin] + tau1.adjusted[,i-burnin]- tau0.adjusted[,i-burnin]
     }
 
     obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted, tau.4gp = tau.4gp, 
                 mu0 = mu0.adjusted, mu1 = mu1.adjusted, tau0 = tau0.adjusted, tau1 = tau1.adjusted)
+
+    # for (i in seq) {
+    #     mu.adjusted[, i - burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+    #     tau.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
+    # }
+    # obj <- list(mu.adjusted = mu.adjusted, tau.adjusted = tau.adjusted)
 
     return(obj)
 }

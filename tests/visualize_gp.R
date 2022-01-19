@@ -5,7 +5,8 @@ nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
 # tau = 5 + cos(0.5*x +1)
 tau = -0.1*x
-A = rbinom(n+nt, 1, 0*(x>5) + 0.5*(abs(x)<=5) + 1*(x< -5))
+bound = 5
+A = rbinom(n+nt, 1, 0*(x>bound) + 0.5*(abs(x)<=bound) + 1*(x< -bound))
 # A = rbinom(n+nt, 1, 0*(x< -5) + 0.5*(abs(x)<=5) + 1*(x>5))
 y1 = cos(0.2*x) + tau
 y0 = cos(0.2*x)
@@ -91,22 +92,24 @@ legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4),
 
 par(mfrow=c(1,1))
 plot(xtest, y[1:n], cex = 0.5, col = ztest + 1, ylim = range(rowMeans(pred.gp$mu0), rowMeans(pred.gp$mu1)))
-points(xtest, rowMeans(pred.gp$mu0) , cex = 0.5, col = 3) #+ ztest * rowMeans(pred.gp$tau.old)
-points(xtest, rowMeans(pred.gp$mu1), cex = 0.5, col = 4)
-# points(xtest, rowMeans(pred.gp$mu.adjusted)+ ztest*rowMeans(pred.gp$tau.old), cex = 0.5, col = 3)
+points(xtest, (pred.gp$mu0[,21]) , cex = 0.5, col = 3) #+ ztest * rowMeans(pred.gp$tau.old)
+points(xtest, (pred.gp$mu1[,21]), cex = 0.5, col = 4)
+points(xtest, (pred.gp$mu.adjusted[,21]), cex = 0.5, col = 6)
 legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4), legend = c('y[ztest==0]', 'y[ztest==1]', 'mu0', 'mu1' ))
-# 
 
-par(mfrow=c(1,1))
+
+# par(mfrow=c(1,1))
 plot(xtest, y1[1:n] - y0[1:n], cex = 0.5, col = ztest + 1, ylim = range(y1-y0, rowMeans(pred.gp$tau0), rowMeans(pred.gp$tau1)))
-points(xtest, rowMeans(pred.gp$tau0) , cex = 0.5, col = 3) #+ ztest * rowMeans(pred.gp$tau.old)
-points(xtest, rowMeans(pred.gp$tau1), cex = 0.5, col = 4)
+points(xtest, (pred.gp$tau0[,21]) , cex = 0.5, col = 3) #+ ztest * rowMeans(pred.gp$tau.old)
+points(xtest, (pred.gp$tau1[,21]), cex = 0.5, col = 4)
+points(xtest, pred.gp$tau.adjusted[,22],cex=0.5, col = 6)
 # points(xtest, rowMeans(pred.gp$mu.adjusted)+ ztest*rowMeans(pred.gp$tau.old), cex = 0.5, col = 3)
 legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4), legend = c('y[ztest==0]', 'y[ztest==1]', 'tau0', 'tau1' ))
 # 
-# 
-tau.adjust = pred.gp$tau.adjusted + pred.gp$tau1 - pred.gp$tau0 # + pred.gp$mu1 - pred.gp$mu0
-plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5)
+par(mfrow=c(1,1))
+tau.adjust = (pred.gp$mu1 - pred.gp$mu0)   #pred.gp$tau1 - pred.gp$tau0 + 
+# tau.adjust = tau.adjust - 
+plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5, ylim = range(rowMeans(tau.adjust)))
 points(xtest, rowMeans(tau.adjust), col = 3, cex = 0.5)
-points(xtest, rowMeans(pred$taudraws), col = 4, cex = 0.5)
+points(xtest, rowMeans(pred.gp$tau.adjusted), col = 4, cex = 0.5)
 legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4), legend = c('y[ztest==0]', 'y[ztest==1]', '4gp', 'tau.xbcf' ))

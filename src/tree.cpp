@@ -2267,7 +2267,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         }
 
         for (size_t i = 0; i < Ntest; i++){
-            y0_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
+            y0_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0]; 
             y1_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
         }
         
@@ -2320,9 +2320,10 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         }
         
         // get training set
-        if (N > 100){ N = 100;}
+        // if (N > 100){ N = 100;}
         std::vector<double> train_ind(N);
-        std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);
+        // std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);
+        std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
 
         std::vector<size_t> train_ind0;
         std::vector<size_t> train_ind1;
@@ -2441,12 +2442,23 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
             mu1.zeros(Ntest, 1);
             Sig1 = cov1.submat(0, 0, Ntest - 1, Ntest - 1);
         }
-       
+       // theta + sig * (res - theta)
         std::normal_distribution<double> normal_samp(0.0, 1.0);
+        mat samp0(Ntest, 1);
+        mat samp1(Ntest, 1);
         for (size_t i = 0; i < Ntest; i++){
-            // yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen);
-            y0_test_xinfo[test_ind[i]] += mu0(i) + pow(Sig0(i,i), 0.5) * normal_samp(state->gen);
-            y1_test_xinfo[test_ind[i]] += mu1(i) + pow(Sig1(i,i), 0.5) * normal_samp(state->gen);
+            samp0(i, 0) = normal_samp(state->gen);
+            samp1(i, 0) = normal_samp(state->gen);
+        }
+        mat draws0 = mu0 + Sig0 * samp0;
+        mat draws1 = mu1 + Sig1 * samp1;
+        // mu1 - mu0 - mean(mu1 - m0) + 
+        for (size_t i = 0; i < Ntest; i++){
+            y0_test_xinfo[test_ind[i]] += draws0(i, 0) + state->b_vec[0] * state->tau_fit[Xtestorder_std[0][i]] / state->num_trees_vec[0];
+            y1_test_xinfo[test_ind[i]] += draws1(i, 0) + state->b_vec[1] * state->tau_fit[Xtestorder_std[0][i]] / state->num_trees_vec[0];
+            // y0_test_xinfo[test_ind[i]] += mu0(i) + pow(Sig0(i,i), 0.5) * normal_samp(state->gen);
+            // y1_test_xinfo[test_ind[i]] += mu1(i) + pow(Sig1(i,i), 0.5) * normal_samp(state->gen);
+            // y1_test_xinfo[test_ind[i]] += mu1(i) - mu0(i) + pow(Sig1(i,i) + Sig0(i,i), 0.5) * normal_samp(state->gen);
         }
     }
 
