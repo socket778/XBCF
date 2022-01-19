@@ -2455,8 +2455,8 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         mat draws1 = mu1 + Sig1 * samp1;
         // mu1 - mu0 - mean(mu1 - m0) + 
         for (size_t i = 0; i < Ntest; i++){
-            y0_test_xinfo[test_ind[i]] += draws0(i, 0) + state->b_vec[0] * state->tau_fit[Xtestorder_std[0][i]] / state->num_trees_vec[0];
-            y1_test_xinfo[test_ind[i]] += draws1(i, 0) + state->b_vec[1] * state->tau_fit[Xtestorder_std[0][i]] / state->num_trees_vec[0];
+            y0_test_xinfo[test_ind[i]] += draws0(i, 0) + state->b_vec[0] * state->tau_fit[test_ind[i]] / state->num_trees_vec[0];
+            y1_test_xinfo[test_ind[i]] += draws1(i, 0) + state->b_vec[1] * state->tau_fit[test_ind[i]] / state->num_trees_vec[0];
             // y0_test_xinfo[test_ind[i]] += mu0(i) + pow(Sig0(i,i), 0.5) * normal_samp(state->gen);
             // y1_test_xinfo[test_ind[i]] += mu1(i) + pow(Sig1(i,i), 0.5) * normal_samp(state->gen);
             // y1_test_xinfo[test_ind[i]] += mu1(i) - mu0(i) + pow(Sig1(i,i) + Sig0(i,i), 0.5) * normal_samp(state->gen);
