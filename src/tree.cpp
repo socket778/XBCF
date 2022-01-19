@@ -2033,18 +2033,19 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         }
 
         // get training set
-        std::vector<size_t> train_ind;
-        if (N < 100) {
-            train_ind.resize(N);
-            std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
-        }
-        else {
-            N = 100;
-            train_ind.resize(N);
-            std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);      
-            // // get training set that's most adjacent to outliers on active variables
-            // size_t N_active = 100 / p_active; // number of data to get per active var 
-            // N = N_active * p_active;
+        std::vector<size_t> train_ind(N);
+        std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
+        // if (N < 100) {
+        //     train_ind.resize(N);
+            
+        // }
+        // else {
+        //     N = 100;
+        //     train_ind.resize(N);
+        //     std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);      
+        //     // // get training set that's most adjacent to outliers on active variables
+        //     // size_t N_active = 100 / p_active; // number of data to get per active var 
+        //     // N = N_active * p_active;
             // train_ind.resize(N);
             // size_t i_count = 0;
             // for (size_t i = 0; i < p_continuous; i++){
@@ -2067,7 +2068,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             //         i_count += N_active;   
             //     }   
             // }
-        }
+        // }
 
         mat X(N + Ntest, p_active );
         std::vector<double> x_range(p_active);
