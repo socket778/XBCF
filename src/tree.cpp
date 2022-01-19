@@ -2207,7 +2207,12 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         }
 
         for (size_t i = 0; i < Ntest; i++){
-            yhats_test_xinfo[test_ind[i]] += mu_draws1[i] - mu_draws0[i];
+            if (N1 > N0){
+                yhats_test_xinfo[test_ind[i]] += mu_draws0[i] - mu_draws1[i];
+            } else{
+                yhats_test_xinfo[test_ind[i]] += mu_draws1[i] - mu_draws0[i];
+            }
+           
         }
     }
 

@@ -414,7 +414,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
     }
 
-    obj <- list(mudraws=mus, taudraws=taus)
+    obj <- list(mu.adjusted=mus, tau.adjusted=taus)
 
     return(obj)
 }
