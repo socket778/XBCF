@@ -98,11 +98,11 @@ void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_ta
             for (size_t i = 0; i < Xorder_tau_std[0].size();i++){
                 if (state->z[i] == 1)
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]) / state->b_vec[1];
                 }
                 else
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]) / state->b_vec[0];
                 }
             }
             std::fill(active_var.begin(), active_var.end(), false);
@@ -217,11 +217,11 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
             for (size_t i = 0; i < Xorder_std[0].size(); i++){
                 if (state->z[i] == 1)
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]);
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[1] * state->tau_fit[i]) / state->a;
                 }
                 else
                 {
-                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]);
+                    state->residual[i] = ((*state->y_std)[i] - state->a * state->mu_fit[i] - state->b_vec[0] * state->tau_fit[i]) / state->a;
                 }
             }
             std::fill(active_var.begin(), active_var.end(), false);

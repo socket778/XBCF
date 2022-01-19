@@ -2116,9 +2116,9 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         for (size_t i = 0; i < N; i++){
             // resid(i, 0) = (state->residual[train_ind[i]]  - this->theta_vector[0]);
             if (state->z[train_ind[i]]==1){
-                resid(i, 0) = state->residual[train_ind[i]]  - this->theta_vector[0] * scale1;
+                resid(i, 0) = state->residual[train_ind[i]]  - this->theta_vector[0];// * scale1;
             }else{
-                resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0] * scale0;
+                resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0];// * scale0;
             }
         }
         
@@ -2395,10 +2395,10 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         mat resid0(N0, 1);
         mat resid1(N1, 1);
         for (size_t i = 0; i < N0; i++){
-            resid0(i, 0) = state->residual[train_ind0[i]] - this->theta_vector[0] * scale0; // * state->a;
+            resid0(i, 0) = state->residual[train_ind0[i]] - this->theta_vector[0];// * scale0; // * state->a;
         }
         for (size_t i = 0; i < N1; i++){
-            resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0] * scale1; // * state->a;
+            resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0];// * scale1; // * state->a;
         }
         
         mat cov0(N0 + Ntest, N0 + Ntest);
