@@ -1,5 +1,4 @@
 #include "tree.h"
-// #include <RcppArmadilloExtensions/sample.h>
 #include <chrono>
 
 using namespace std;
@@ -1868,8 +1867,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                                 std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                                 matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                                std::unique_ptr<State> &state, std::vector<std::vector<double>> X_range,
-                                std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, const size_t &p_categorical, 
+                                std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
+                                matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, const size_t &p_categorical, 
                                 const size_t &tree_ind, const double &theta, const double &tau)
 {
     // gaussian process prediction from root
@@ -1935,14 +1934,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 // all test data goes to the right node
                 this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
+                                            state, pitrain, pitest, pirange, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
                 return;
             }
             if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
                 // all test data goes to the left node
                 this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
+                                            state, pitrain, pitest, pirange, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
                 return;
             }
 
@@ -1968,40 +1967,42 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
+                                    state, pitrain, pitest, pirange, X_range, active_var_left, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
+                                    state, pitrain, pitest, pirange, X_range, active_var_right, yhats_test_xinfo, p_categorical, tree_ind, theta, tau);
         // cout << "end rigth " << endl;
     }
     else {
-        // cout << "active_var = " << active_var << endl;
         if (N == 0){
             cout << "0 training data in the leaf node" << endl;
             throw;
         }
-        // assign mu 
-        // for (size_t i = 0; i < N; i++){
-        //     (*(x_struct->data_pointers[tree_ind][Xorder_std[0][i]])) = &this->theta_vector;
-        // }
+
         for (size_t i = 0; i < Ntest; i++){
             yhats_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
         }
         
-        // check out of range test sets
-        // exterior points may not be out-of-range on all active variables
-        // do we want to use all acitve_var info or just those having out-of-range points?
-        // FOR NOW: just those having out-of-range points
+        // // get test ind based on ps
         std::vector<size_t> test_ind;
+        // for (size_t i = 0; i < Ntest; i++){
+        //     // find out of range based on propensity score
+        //     if(pitest[Xtestorder_std[0][i]] > pirange[1]){
+        //         test_ind.push_back(Xtestorder_std[0][i]);
+        //     }
+        //     else if (pitest[Xtestorder_std[0][i]] < pirange[0]){
+        //         test_ind.push_back(Xtestorder_std[0][i]);
+        //     }
+        // }
+        
+        // get test_ind based on active var 
         std::vector<bool> active_var_left(p_continuous, false); // check which side the outliers are on for each active var
         std::vector<bool> active_var_right(p_continuous, false); // check which side the outliers are on for each active var
 
-        // TODO: out-of-range logic work differently on causal non-overlap problem
-        // data points can be out-of-range on both side after the cut on active variable (the cut itself is outside the overlap area)
         for (size_t i = 0; i < Ntest; i++){
-           for (size_t j = 0; j < p_continuous; j++){
+            for (size_t j = 0; j < p_continuous; j++){
                 if (active_var[j]){
                     if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) > X_range[j][1]){
                         test_ind.push_back(Xtestorder_std[j][i]);
@@ -2016,21 +2017,302 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 }
             }
         }
+       size_t p_active = 0;
+        for (size_t i = 0; i < p_continuous; i++){
+            if (active_var_left[i] | active_var_right[i]){
+                p_active += 1;
+            }
+        }
+        if (p_active == 0){
+            return;     
+        }
 
-        // construct covariance matrix
-        // TODO: consider categorical active variables
+        Ntest = test_ind.size();
+        if (Ntest == 0){
+            return;
+        }
+
+        // get training set
+        std::vector<size_t> train_ind;
+        if (N < 100) {
+            train_ind.resize(N);
+            std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
+        }
+        else {
+            N = 100;
+            train_ind.resize(N);
+            std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);      
+            // // get training set that's most adjacent to outliers on active variables
+            // size_t N_active = 100 / p_active; // number of data to get per active var 
+            // N = N_active * p_active;
+            // train_ind.resize(N);
+            // size_t i_count = 0;
+            // for (size_t i = 0; i < p_continuous; i++){
+            //     // if test points are out-of-range on both side
+            //     if (active_var_left[i] & active_var_right[i]){
+            //         // sample
+            //         std::sample(Xorder_std[i].begin(), Xorder_std[i].end(), train_ind.begin() + i_count, N_active, state->gen);
+            //         // for (size_t j = 0; j < N_active; j++){
+            //         //     train_ind[i_count + j] = Xorder_std[i][j * Xorder_std[i].size() / N_active];
+            //         // }
+            //     }
+            //     else if (active_var_left[i]){
+            //         // get the smallest values (the first N_active obs in Xorder_std[i])
+            //         std::copy(Xorder_std[i].begin(), Xorder_std[i].begin() + N_active, train_ind.begin() + i_count);
+            //         i_count += N_active;
+            //     }
+            //     else if (active_var_right[i]) {
+            //         // get the largest values 
+            //         std::copy(Xorder_std[i].end() - N_active, Xorder_std[i].end(), train_ind.begin() + i_count);   
+            //         i_count += N_active;   
+            //     }   
+            // }
+        }
+
+        mat X(N + Ntest, p_active );
+        std::vector<double> x_range(p_active);
+        const double *split_var_x_pointer;
+        //  add ps
+        //  for (size_t i = 0; i < N; i++){
+        //     X(i, 0) = pitrain[train_ind[i]];
+        // }
+        // for (size_t i = 0; i < Ntest; i++){
+        //     X(i + N, 0) = pitest[test_ind[i]];
+        // }
+        // x_range[0] = pirange[1]- pirange[0];
+        size_t j_count = 0;
+        for (size_t j = 0; j < p_continuous; j++){
+            if (active_var_left[j] | active_var_right[j]) {
+                split_var_x_pointer = x_struct->X_std + x_struct->n_y * j;
+                for (size_t i = 0; i < N; i++){
+                    X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
+                }
+                // flexible range scale per leaf node
+                x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
+
+                split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
+                for (size_t i = 0; i < Ntest; i++){
+                    X(i + N, j_count) = *(split_var_x_pointer + test_ind[i]);
+                }
+                
+                if (x_range[j_count] == 0){
+                    cout << "x_range = 0" << ", j = " << j << endl;
+                    throw;
+                }
+                j_count += 1;
+            }
+        }
+
+        double scale0, scale1;
+        if (state->fl == 0){
+            scale0 = state->a;
+            scale1 = state->a;
+        }else{
+            scale0 = state->b_vec[0];
+            scale1 = state->b_vec[1];
+        }
+        mat resid(N, 1);
+        for (size_t i = 0; i < N; i++){
+            // resid(i, 0) = (state->residual[train_ind[i]]  - this->theta_vector[0]);
+            if (state->z[train_ind[i]]==1){
+                resid(i, 0) = state->residual[train_ind[i]]  - this->theta_vector[0] * scale1;
+            }else{
+                resid(i, 0) = state->residual[train_ind[i]] - this->theta_vector[0] * scale0;
+            }
+        }
+        
+        mat cov(N + Ntest, N + Ntest);
+        get_rel_covariance(cov, X, x_range, theta, tau); 
+        // Add diagonal term sigma^2 based on treated/control group
+        for (size_t i = 0; i < N; i++){
+            cov(i, i) +=  state->z[train_ind[i]]*pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);//  / abs(scale0);
+            cov(i, i) += (1- state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]); // / abs(scale1);
+        }
+
+        mat k = cov.submat(N, 0, N + Ntest - 1, N - 1); // cov[2:nrow(cov), 1]
+        mat Kinv = pinv(cov.submat(0, 0, N - 1, N -1));
+        mat mu = k * Kinv * resid;
+        mat Sig =  cov.submat(N, N, N + Ntest - 1, N + Ntest - 1) - k * Kinv * trans(k);
+        std::normal_distribution<double> normal_samp(0.0, 1.0);
+
+        for (size_t i = 0; i < Ntest; i++){
+            yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i,i), 0.5)*normal_samp(state->gen);
+           
+        }
+    }
+
+    return;
+}
+
+
+void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, 
+                                std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
+                                matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
+                                std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
+                                std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
+                                matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
+                                const size_t &tree_ind, const double &theta, const double &tau)
+{
+    // gaussian process prediction from root
+    // cout << "predict_from_root_gp" << endl;
+    size_t N = Xorder_std[0].size();
+    size_t Ntest = Xtestorder_std[0].size();
+    size_t p = active_var.size();
+    size_t p_categorical = state->p_categorical;
+    size_t p_continuous = p - p_categorical;
+
+    if (Ntest == 0){ // no need to split if Ntest = 0
+        return;
+    }
+
+    if (this->l)
+    {
+        active_var[v] = true;
+        std::vector<bool> active_var_left(active_var.size());
+        std::vector<bool> active_var_right(active_var.size());
+        std::copy(active_var.begin(), active_var.end(), active_var_left.begin());
+        std::copy(active_var.begin(), active_var.end(), active_var_right.begin());
+
+        matrix<size_t> Xorder_left_std;
+        matrix<size_t> Xorder_right_std;
+        matrix<size_t> Xtestorder_left_std;
+        matrix<size_t> Xtestorder_right_std;
+
+        std::vector<size_t> X_num_unique_left(X_num_unique.size());
+        std::vector<size_t> X_num_unique_right(X_num_unique.size());
+
+        std::vector<size_t> X_counts_left(X_counts.size());
+        std::vector<size_t> X_counts_right(X_counts.size());
+
+        std::vector<size_t> Xtest_num_unique_left(Xtest_num_unique.size());
+        std::vector<size_t> Xtest_num_unique_right(Xtest_num_unique.size());
+
+        std::vector<size_t> Xtest_counts_left(Xtest_counts.size());
+        std::vector<size_t> Xtest_counts_right(Xtest_counts.size());
+
+        if (N > 0){
+            // cout << "var " << v << " cut " << c << endl;
+            // get split point
+            size_t split_point = get_split_point(x_struct->X_std, Xorder_std, x_struct->n_y, v, c);
+            ini_xinfo_sizet(Xorder_left_std, split_point + 1, p);
+            ini_xinfo_sizet(Xorder_right_std, N - split_point - 1, p);
+
+            if (p_categorical > 0)
+            {
+                split_xorder_std_categorical_simplified(x_struct, Xorder_left_std, Xorder_right_std, this->v, split_point, 
+                                                        Xorder_std, X_counts_left, X_counts_right, 
+                                                        X_num_unique_left, X_num_unique_right, X_counts, p_categorical);
+            }
+
+            if (p_continuous > 0)
+            {
+                split_xorder_std_continuous_simplified(x_struct, Xorder_left_std, Xorder_right_std, v, split_point, 
+                                                        Xorder_std, p_continuous);
+            }
+
+        }
+        
+        if (Ntest> 0){
+            if (c < *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][0])){
+                // all test data goes to the right node
+                this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
+                                            Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
+                                            state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
+                                            tree_ind, theta, tau);
+                return;
+            }
+            if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
+                // all test data goes to the left node
+                this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
+                                            Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
+                                            state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
+                                            tree_ind, theta, tau);
+                return;
+            }
+
+            size_t test_split_point = get_split_point(xtest_struct->X_std, Xtestorder_std, xtest_struct->n_y, v, c);
+            
+            ini_xinfo_sizet(Xtestorder_left_std, test_split_point + 1, p);
+            ini_xinfo_sizet(Xtestorder_right_std, Ntest - test_split_point - 1, p);
+            
+
+            if (p_categorical > 0)
+            {
+                split_xorder_std_categorical_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, 
+                                                        Xtestorder_std, Xtest_counts_left, Xtest_counts_right, 
+                                                        Xtest_num_unique_left, Xtest_num_unique_right, Xtest_counts, p_categorical);
+            }
+            if (p_continuous > 0)
+            {   
+                split_xorder_std_continuous_simplified(xtest_struct, Xtestorder_left_std, Xtestorder_right_std, v, test_split_point, 
+                                                        Xtestorder_std, p_continuous);
+            }
+        }
+
+        // cout << "left, N = " << Xorder_left_std[0].size() << endl;
+        this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
+                                    Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
+                                    state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, tree_ind, theta, tau);
+        // cout << "end left" << endl;
+        // cout << "right, N = " << Xorder_right_std[0].size() << endl;
+        this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
+                                    Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
+                                    state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, tree_ind, theta, tau);
+        // cout << "end rigth " << endl;
+    }
+    else {
+        if (N == 0){
+            cout << "0 training data in the leaf node" << endl;
+            throw;
+        }
+
+        for (size_t i = 0; i < Ntest; i++){
+            y0_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
+            y1_test_xinfo[Xtestorder_std[0][i]] += this->theta_vector[0];
+        }
+        
+        std::vector<size_t> test_ind;
+        // for (size_t i = 0; i < Ntest; i++){
+        //     // find out of range based on propensity score
+        //     if(pitest[Xtestorder_std[0][i]] > pirange[1]){
+        //         test_ind.push_back(Xtestorder_std[0][i]);
+        //     }
+        //     else if (pitest[Xtestorder_std[0][i]] < pirange[0]){
+        //         test_ind.push_back(Xtestorder_std[0][i]);
+        //     }
+        // }
+              
+        // get test_ind based on active var 
+        std::vector<bool> active_var_left(p_continuous, false); // check which side the outliers are on for each active var
+        std::vector<bool> active_var_right(p_continuous, false); // check which side the outliers are on for each active var
+
+        for (size_t i = 0; i < Ntest; i++){
+            for (size_t j = 0; j < p_continuous; j++){
+                if (active_var[j]){
+                    if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) > X_range[j][1]){
+                        test_ind.push_back(Xtestorder_std[j][i]);
+                        active_var_right[j] = true; 
+                        break;
+                    }
+                    else if (*(xtest_struct->X_std + xtest_struct->n_y * j + Xtestorder_std[j][i]) < X_range[j][0]){ 
+                        test_ind.push_back(Xtestorder_std[j][i]);
+                        active_var_left[j] = true; 
+                        break;
+                    }
+                }
+            }
+        }
+        
         size_t p_active = 0;
         for (size_t i = 0; i < p_continuous; i++){
             if (active_var_left[i] | active_var_right[i]){
                 p_active += 1;
             }
         }
-        // cout << "p_active  = " << p_active << ", Ntest = " << test_ind.size() << endl;
         if (p_active == 0){
-            // cout << "Warning: number of continuous active variable is 0. Sweep = " << sweeps << ", tree = " << tree_ind << endl;
             return;     
         }
-       
+
         Ntest = test_ind.size();
         // cout << "out of range Ntest = " << Ntest << endl;
         if (Ntest == 0){
@@ -2038,82 +2320,38 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         }
         
         // get training set
-        // std::vector<size_t> train_ind;
-        // if (N < 100) {
-        //     train_ind.resize(N);
-        //     std::copy(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin());
-        // }
-        // else {
-        //     // get training set that's most adjacent to outliers on active variables
-        //     size_t N_active = 100 / p_active; // number of data to get per active var 
-        //     N = N_active * p_active;
-        //     train_ind.resize(N);
-        //     size_t i_count = 0;
-        //     for (size_t i = 0; i < p_continuous; i++){
-        //         // if test points are out-of-range on both side
-        //         if (active_var_left[i] & active_var_right[i]){
-        //               // uniformly get values on variable i
-        //                 for (size_t j = 0; j < N_active; j++){
-        //                     train_ind[i_count + j] = Xorder_std[i][j * Xorder_std[i].size() / N_active];
-        //                 }
-        //         }
-        //         else if (active_var_left[i]){
-        //             // get the smallest values (the first N_active obs in Xorder_std[i])
-        //             std::copy(Xorder_std[i].begin(), Xorder_std[i].begin() + N_active, train_ind.begin() + i_count);
-        //             i_count += N_active;
-        //         }
-        //         else if (active_var_right[i]) {
-        //             // get the largest values 
-        //             std::copy(Xorder_std[i].end() - N_active, Xorder_std[i].end(), train_ind.begin() + i_count);   
-        //             i_count += N_active;   
-        //         }   
-        //     }
-        // }
+        if (N > 100){ N = 100;}
+        std::vector<double> train_ind(N);
+        std::sample(Xorder_std[0].begin(), Xorder_std[0].end(), train_ind.begin(), N, state->gen);
 
-        // // get training data from overlap area
-        // std::vector<size_t> train_ind;
-        // bool in_range;
-        // for (size_t i = 0; i < N; i++){
-        //     in_range = true;
-        //     for (size_t j = 0; j < p; j++){
-        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > X_range[j][1] ){
-        //             in_range = false;
-        //         }
-        //         if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) < X_range[j][0] ){
-        //             in_range = false;
-        //         }
-        //     }
-        //     if (in_range){
-        //         train_ind.push_back(Xorder_std[0][i]);
-        //     }
-        //     if (train_ind.size() >= 100){
-        //         break;
-        //     }
-        // }
-
-        // N = train_ind.size();
-        // if (N == 0){
-        //     return;
-        // }
-
-        // get separate training set for treated and control group
-        std::vector<size_t> train_ind1;
         std::vector<size_t> train_ind0;
+        std::vector<size_t> train_ind1;
         for (size_t i = 0; i < N; i++){
-            if (state->z[Xorder_std[0][i]] == 1){
-                train_ind1.push_back(Xorder_std[0][i]);
-            }
-            else{
-                train_ind0.push_back(Xorder_std[0][i]);
-            }
+        if (state->z[train_ind[i]] == 0){
+            train_ind0.push_back(train_ind[i]);
+        }else{
+            train_ind1.push_back(train_ind[i]);
         }
-        size_t N1 = train_ind1.size();
-        size_t N0 = train_ind0.size();
+        }
 
-        mat X1(N1 + Ntest, p_active);
+        size_t N0 = train_ind0.size();
+        size_t N1 = train_ind1.size();
         mat X0(N0 + Ntest, p_active);
+        mat X1(N1 + Ntest, p_active);
+        // for (size_t i = 0; i < N0; i++){
+        //     X0(i, 0) = pitrain[train_ind0[i]];
+        // }
+        // for (size_t i = 0; i < N1; i++){
+        //     X1(i, 0) = pitrain[train_ind1[i]];
+        // }
+        // for (size_t i = 0; i < Ntest; i++){
+        //     X0(i + N0, 0) = pitest[test_ind[i]];
+        //     X1(i + N1, 0) = pitest[test_ind[i]];
+        // }
+
         std::vector<double> x_range(p_active);
         const double *split_var_x_pointer;
+        // x_range[0] = pirange[1]- pirange[0];
         size_t j_count = 0;
         for (size_t j = 0; j < p_continuous; j++){
             if (active_var_left[j] | active_var_right[j]) {
@@ -2124,7 +2362,6 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 for (size_t i = 0; i < N0; i++){
                     X0(i, j_count) = *(split_var_x_pointer + train_ind0[i]);
                 }
-                // x_range[j_count] = x_struct->X_range[j][1] - x_struct->X_range[j][0]; // fixed range scale
                 // flexible range scale per leaf node
                 x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
 
@@ -2141,78 +2378,75 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 j_count += 1;
             }
         }
-
-        if (j_count < p_active){
-            cout << "j_count = " << j_count << ", p_active = " << p_active << ", active_var = " << active_var << endl;
-            cout << "active var left = " << active_var_left << ", right = " << active_var_right << endl;
-            throw;
-        }
-
-        mat resid1(N1, 1);
-        for (size_t i = 0; i < N1; i++){
-            resid1(i, 0) = (state->residual[train_ind1[i]] - this->theta_vector[0]);
-            // resid1(i, 0) = (state->residual[train_ind1[i]] - this->theta_vector[0]) * state->b_vec[1];
-            // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
+        // cout << "X0 = " << X0 << endl;
+        // cout << "X1 = " << X1 << endl;
+        // cout << "x_range = " << x_range << endl;
+        
+        double scale0, scale1;
+        if (state->fl == 0){
+            scale0 = state->a;
+            scale1 = state->a;
+        }else{
+            scale0 = state->b_vec[0];
+            scale1 = state->b_vec[1];
         }
         mat resid0(N0, 1);
+        mat resid1(N1, 1);
         for (size_t i = 0; i < N0; i++){
-            resid0(i, 0) = (state->residual[train_ind0[i]] - this->theta_vector[0]);
-            // resid0(i, 0) = (state->residual[train_ind0[i]] - this->theta_vector[0]) * state->b_vec[0];
-            // cout << "residaul = "<< state->residual[train_ind[i]] << ", theta = " << this->theta_vector[0] << endl;
+            resid0(i, 0) = state->residual[train_ind0[i]] - this->theta_vector[0] * scale0; // * state->a;
         }
-        
-        mat cov1(N1 + Ntest, N1 + Ntest);
-        mat cov0(N0 + Ntest, N0 + Ntest);
-        // cout << "tau = " << tau << endl;
-        get_rel_covariance(cov1, X1, x_range, theta, tau); 
-        get_rel_covariance(cov0, X0, x_range, theta, tau); 
-        // Add diagonal term sigma^2 based on treated/control group
         for (size_t i = 0; i < N1; i++){
-            cov1(i, i) +=  pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[1]);
-           
-        } 
-        for (size_t i = 0; i < N0; i++){
-             cov0(i, i) += pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(state->b_vec[0]);
+            resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0] * scale1; // * state->a;
         }
         
-        std::normal_distribution<double> normal_samp(0.0, 1.0);
-        std::vector<double> mu_draws1(Ntest);
-        if (N1 > 0){
-            mat Kinv1 = pinv(cov1.submat(0, 0, N1 - 1, N1 -1));
-            mat k1 = cov1.submat(N1, 0, N1 + Ntest - 1, N1 - 1);
-            mat mu1 = k1 * Kinv1 * resid1;
-            mat Sig1 =  cov1.submat(N1, N1, N1 + Ntest - 1, N1 + Ntest - 1) - k1 * Kinv1 * trans(k1);
-            for (size_t i = 0; i < Ntest; i++){
-                mu_draws1[i] = mu1(i) + pow(Sig1(i,i), 0.5)*normal_samp(state->gen);
-            }
-        }else{
-            for(size_t i = 0; i < Ntest; i++){
-                mu_draws1[i] = pow(cov1(i,i), 0.5)*normal_samp(state->gen); // prior
-            }
+        mat cov0(N0 + Ntest, N0 + Ntest);
+        mat cov1(N1 + Ntest, N1 + Ntest);
+        get_rel_covariance(cov0, X0, x_range, theta, tau); 
+        get_rel_covariance(cov1, X1, x_range, theta, tau); 
+         // Add diagonal term sigma^2 based on treated/control group
+
+        for (size_t i = 0; i < N0; i++){
+             cov0(i, i) +=  pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);// / abs(scale0);
+        } 
+        for (size_t i = 0; i < N1; i++){
+             cov1(i, i) += pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]); // / abs(scale1) ;
         }
 
-        std::vector<double> mu_draws0(Ntest);
+        // cout << "cov0 = "  << cov0 << endl;
+        // draw m0
+        mat mu0(Ntest, 1);
+        mat Sig0(Ntest, Ntest);
         if (N0 > 0){
-            mat Kinv0 = pinv(cov0.submat(0, 0, N0 - 1, N0 -1));
             mat k0 = cov0.submat(N0, 0, N0 + Ntest - 1, N0 - 1);
-            mat mu0 = k0 * Kinv0 * resid0;
-            mat Sig0 =  cov0.submat(N0, N0, N0 + Ntest - 1, N0 + Ntest - 1) - k0 * Kinv0 * trans(k0);
-            for (size_t i = 0; i < Ntest; i++){
-                mu_draws0[i] = mu0(i) + pow(Sig0(i,i), 0.5)*normal_samp(state->gen);
-            }
+            mat Kinv0 = pinv(cov0.submat(0, 0, N0 - 1, N0 - 1));
+            mu0 = k0 * Kinv0 * resid0;
+            Sig0 = cov0.submat(N0, N0, N0 + Ntest - 1, N0 + Ntest - 1) - k0 * Kinv0 * trans(k0);
         }else{
-            for(size_t i = 0; i < Ntest; i++){
-                mu_draws0[i] = pow(cov0(i,i), 0.5)*normal_samp(state->gen); // prior
-            }
+            // prior
+            mu0.zeros(Ntest, 1);
+            Sig0 = cov0.submat(0, 0, Ntest - 1, Ntest - 1);
         }
 
+        // cout << "cov1 = " << cov1 << endl;
+
+        mat mu1(Ntest, 1);
+        mat Sig1(Ntest, Ntest);
+        if (N1 > 0){
+            mat k1 = cov1.submat(N1, 0, N1 + Ntest - 1, N1 - 1);
+            mat Kinv1 = pinv(cov1.submat(0, 0, N1 - 1, N1 - 1));
+            mu1 = k1 * Kinv1 * resid1;
+            Sig1 = cov1.submat(N1, N1, N1 + Ntest - 1, N1 + Ntest - 1) - k1 * Kinv1 * trans(k1);
+        }else{
+            // prior
+            mu1.zeros(Ntest, 1);
+            Sig1 = cov1.submat(0, 0, Ntest - 1, Ntest - 1);
+        }
+       
+        std::normal_distribution<double> normal_samp(0.0, 1.0);
         for (size_t i = 0; i < Ntest; i++){
-            if (N1 > N0){
-                yhats_test_xinfo[test_ind[i]] += mu_draws0[i] - mu_draws1[i];
-            } else{
-                yhats_test_xinfo[test_ind[i]] += mu_draws1[i] - mu_draws0[i];
-            }
-           
+            // yhats_test_xinfo[test_ind[i]] += mu(i) + pow(Sig(i, i), 0.5) * normal_samp(state->gen);
+            y0_test_xinfo[test_ind[i]] += mu0(i) + pow(Sig0(i,i), 0.5) * normal_samp(state->gen);
+            y1_test_xinfo[test_ind[i]] += mu1(i) + pow(Sig1(i,i), 0.5) * normal_samp(state->gen);
         }
     }
 

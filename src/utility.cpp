@@ -289,7 +289,7 @@ void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> 
 }
 
 void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
-                std::vector<std::vector<double>> &X_range)
+                matrix<double> &X_range)
 {
     size_t N = Xorder_std[0].size();
     size_t p = Xorder_std.size();
@@ -359,12 +359,6 @@ void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double th
             // cout << "distance = " << temp << endl;
             cov(i, j) = tau * exp( - theta * temp);
             cov(j, i) = cov(i, j);
-            // if (isnan(cov(i,j)) | isinf(cov(i,j))){
-            //     cout << "cov = " << cov(i,j) << ", i = " << i << ", j = " << j << endl;
-            //     cout << "x_range = " << X_range << endl;
-            //     cout << "X(i,) = " << X.submat(i, 0, i, X.n_cols-1) << endl;
-            //     cout << "X(j,) = " << X.submat(j, 0, j, X.n_cols-1) << endl;
-            // }
         }
     } 
     return;  

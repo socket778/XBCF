@@ -148,7 +148,7 @@ bool is_non_zero(size_t x);
 size_t count_non_zero(std::vector<double> &vec);
 
 
-void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<std::vector<double>> &X_range);
+void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, matrix<double> &X_range);
 
 void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
                     std::vector<std::vector<double>> &X_range);

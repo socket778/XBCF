@@ -47,6 +47,15 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
     ////////////// Prognostic term loop
     for (size_t tree_ind = 0; tree_ind < state->num_trees_vec[0]; tree_ind++)
     {
+
+      // // check residuals and theta value
+      // if (state->z[0] == 1){
+      //   cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " theta = " << (*(x_struct_ps->data_pointers[tree_ind][0]))[0] << endl;
+      // }
+      // else{
+      //   cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " theta = " << (*(x_struct_ps->data_pointers[tree_ind][0]))[0] << endl;
+      // }
+
       state->update_residuals(); // update residuals
       model_ps->draw_sigma(state, 0); // draw sigmas (and update them in the state obj)
 
@@ -121,14 +130,6 @@ void mcmc_loop_xbcf(matrix<size_t> &Xorder_std, matrix<size_t> &Xorder_tau_std,
       model_trt->initialize_root_suffstat(state, trees_trt[sweeps][tree_ind].suff_stat); // initialize suff stat using partial fit
       // GFR
       trees_trt[sweeps][tree_ind].grow_from_root(state, Xorder_tau_std, x_struct_trt->X_counts, x_struct_trt->X_num_unique, model_trt, x_struct_trt, sweeps, tree_ind, true, false, true);
-
-      // // check residuals and theta value
-      // if (state->z[0] == 1){
-      //   cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[1] * state->tau_fit[0] << " theta = " << (*(x_struct_trt->data_pointers[tree_ind][0]))[0] << endl;
-      // }
-      // else{
-      //   cout << "sweeps " << sweeps << " tree " << tree_ind << " resid = " << (*state->y_std)[0] - state->a * state->mu_fit[0] - state->b_vec[0] * state->tau_fit[0] << " theta = " << (*(x_struct_trt->data_pointers[tree_ind][0]))[0] << endl;
-      // }
 
       model_trt->state_sweep(tree_ind, state->tau_fit, x_struct_trt); // update total tau_fit by adding just fitted values
 
