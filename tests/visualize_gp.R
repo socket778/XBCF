@@ -84,10 +84,9 @@ points(xtest, gp.lower, col = 3, cex = 0.5)
 legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 6, 5), 
        legend = c('y1 - y0', 'tau.xbcf','tau1 - tau0', 'gp C.I'))
 
-# 
-# plot(xtest, y[1:n], col = ztest + 1, cex = 0.5)
-# points(xtest, rowMeans(pred.gp$mu.adjusted) + ztest*rowMeans(pred.gp$tau.adjusted), col = 3, cex = 0.5)
-# points(xtest, rowMeans(pred.gp$mu.adjusted), col = 4, cex = 0.5)
-# legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 3, 4), 
-#        legend = c('y[ztest==0]', 'y[ztest==1]', 'tau + mu', 'mu'))
-# 
+plot(xtest, y1[1:n], col = 2, cex = 0.5, ylim = range(y1, y0))
+points(xtest, y0[1:n], col = 1, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu.adjusted), col = 6, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu0.adjusted), col = 7, cex = 0.5)
+points(xtest, rowMeans(pred$taudraws + pred$mudraws),cex = 0.5, col = 4)
+points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$mu0.adjusted - pred.gp$mu1.adjusted + pred.gp$tau.adjusted), cex = 0.5, col = 3)
