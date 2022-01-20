@@ -289,11 +289,12 @@ void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> 
 }
 
 void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
-                matrix<double> &X_range)
+                matrix<double> &X_range, bool &overlap)
 {
     size_t N = Xorder_std[0].size();
     size_t p = Xorder_std.size();
     ini_matrix(X_range, 2, p);
+    // cout << "N = " << N << ", p = " << p <<endl;
 
     std::vector<std::vector<double>> X_range_trt;
     std::vector<std::vector<double>> X_range_ctrl;
@@ -303,43 +304,64 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     // find the first and the last treated and control sample
     bool treated, control;
     size_t ind, idx;
-    for (size_t i = 0; i < p; i++){
-        treated = true;
-        control = true;
-        ind = 0;
-        while ( treated | control  ){
-            idx = Xorder_std[i][ind];
-            if ((z_std[idx] == 0) & control){
-                X_range_ctrl[i][0] = *(Xpointer + i * N + idx);
-                control = false;
+    for (size_t j = 0; j < p; j++){
+        treated = false;
+        control = false;
+        for(size_t i = 0; i < N; i++){
+            idx = Xorder_std[j][i];
+            if (z_std[idx] == 0){
+                control = true;
+                X_range_ctrl[j][0] = *(Xpointer + j * N + idx);
+            } else{
+                X_range_trt[j][0] = *(Xpointer + j * N + idx);
+                treated = true;
             }
-            else if ((z_std[idx] == 1) & treated){
-                X_range_trt[i][0] = *(Xpointer + i * N + idx);
-                treated = false;
+            if (treated & control){
+                break;
             }
-            ind += 1;
         }
-        treated = true;
-        control = true;
-        ind = N-1;
-        while ( treated | control  ){
-            idx = Xorder_std[i][ind];
-            if ((z_std[idx] == 0) & control){
-                X_range_ctrl[i][1] = *(Xpointer + i * N + idx);
-                control = false;
+        // in case no treated or control
+        if (!treated){
+            X_range_ctrl[j][1] = *(Xpointer + j * N + Xorder_std[j][N-1]);
+            // cout << "no treated, control = " << control << ", range = " << X_range_ctrl << endl;
+            X_range_trt[j][1] = X_range_ctrl[j][0];
+            X_range_trt[j][0] = X_range_ctrl[j][1]; // fake range to make sure non-overlap
+            continue;
+        } 
+        if (!control){
+            // cout << "no control, treated = " << treated << ", range = " << X_range_trt << endl;
+            X_range_trt[j][1] = *(Xpointer + j * N + Xorder_std[j][N-1]);
+            X_range_ctrl[j][1] = X_range_trt[j][0];
+            X_range_ctrl[j][0] = X_range_trt[j][1]; // fake range to make sure non-overlap
+            continue;
+        }
+
+
+        treated = false;
+        control = false;
+        for(size_t i = 0; i < N; i++){
+            idx = Xorder_std[j][N - 1 - i];
+            if (z_std[idx] == 0){
+                control = true;
+                X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
+            } else{
+                X_range_trt[j][1] = *(Xpointer + j * N + idx);
+                treated = true;
             }
-            else if ((z_std[idx] == 1) & treated){
-                X_range_trt[i][1] = *(Xpointer + i * N + idx);
-                treated = false;
+            if (treated & control){
+                break;
             }
-            ind -= 1;
         }
     }
+    // cout << "X_range_trt = " << X_range_trt << endl;
+    // cout << "X_range_ctrl = " << X_range_ctrl << endl;
 
     // Get overlap
     for (size_t i = 0; i < p; i++){
         X_range[i][0] = (X_range_trt[i][0] > X_range_ctrl[i][0]) ? X_range_trt[i][0] : X_range_ctrl[i][0];
         X_range[i][1] = (X_range_trt[i][1] < X_range_ctrl[i][1]) ? X_range_trt[i][1] : X_range_ctrl[i][1];
+        if (X_range[i][0] >= X_range[i][1]) overlap = false;
+        // cout << "X_range = " << X_range[i] << ", overlap = " << overlap << endl;
     }
 
     return;

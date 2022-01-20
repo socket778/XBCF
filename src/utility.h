@@ -154,7 +154,7 @@ void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> 
                     std::vector<std::vector<double>> &X_range);
 
 void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
-                std::vector<std::vector<double>> &X_range);
+                std::vector<std::vector<double>> &X_range, bool &overlap);
 
 void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double theta, double tau);
 

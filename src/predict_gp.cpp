@@ -393,7 +393,8 @@ Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std:
 
     // Get X_range
     matrix<double> X_range;
-    get_overlap(Xpointer, Xorder_std, z_std, X_range);
+    bool overlap;
+    get_overlap(Xpointer, Xorder_std, z_std, X_range, overlap);
     // get range for propenstiy scor,e
     std::vector<double> pirange(2);// overlap range
     // lower bound of pi range is defined by the smallest pi value in treatment group
