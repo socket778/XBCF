@@ -2400,6 +2400,11 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         for (size_t i = 0; i < N1; i++){
             resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0];// * scale1; // * state->a;
         }
+        // substract mean
+        double resid_mean0 = accu(resid0) / N0;
+        double resid_mean1 = accu(resid1) / N1;
+        for (size_t i = 0; i < N0; i++) resid0(i, 0) -= resid_mean0;
+        for (size_t i = 0; i < N1; i++) resid1(i, 0) -= resid_mean1;
         
         mat cov0(N0 + Ntest, N0 + Ntest);
         mat cov1(N1 + Ntest, N1 + Ntest);
