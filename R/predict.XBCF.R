@@ -67,7 +67,7 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
 
     for (i in seq) {
         taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
-        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany + obj2$predicted_values[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws),i]
     }
 
     obj <- list(mudraws=mus, taudraws=taus)
@@ -170,7 +170,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
 #'
 #' @return A matrix with a set of draws of predicted prognostic effect estimates; rows are datapoints, columns are iterations.
 #' @export
-predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
+predictMuDraws <- function(model, x_con, x_mod = x_con, pihat=NULL, burnin = NULL) {
 
     if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix -- converting type.\n")
@@ -203,6 +203,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     x_con <- cbind(pihat, x_con)
 
     obj = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
+    objtrt = .Call(`_XBCF_xbcf_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -217,7 +218,8 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin]= obj1$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        muhat.draws[, i - burnin] = muhat.draws[, i - burnin] + objtrt$predicted_values[,i] * model$sdy * (model$b0_draws[nrow(model$b0_draws),i])
     }
 
     return(muhat.draws)
@@ -232,7 +234,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
 #'
 #' @return An array with point-estimates of prognostic effect per datapoint in the given matrix.
 #' @export
-predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
+predictMus <- function(model, x_con, x_mod = x_con, pihat = NULL, burnin = NULL) {
 
     if(!("matrix" %in% class(x_con))) {
         cat("Msg: input x_con is not a matrix -- converting type.\n")
@@ -265,6 +267,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
     x_con <- cbind(pihat, x_con)
 
     obj = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
+    objtrt = .Call(`_XBCF_xbcf_predict`, x_mod, model$model_list$tree_pnt_trt)
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
@@ -280,6 +283,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 
     for (i in seq) {
         muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        muhat.draws[, i - burnin] = muhat.draws[, i - burnin] + objtrt$predicted_values[,i] * model$sdy * (model$b0_draws[nrow(model$b0_draws),i])
     }
 
     muhats <- rowMeans(muhat.draws)
@@ -418,29 +422,13 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     tau.adjusted <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
-    tau0.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)
-    tau1.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin) 
-    mu0.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)    
-    mu1.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)    
-
     for (i in seq) {
-        tau0.adjusted[, i - burnin] = objtau.gp$y0[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws), i]
-        tau1.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * model$b1_draws[nrow(model$b1_draws), i]
-        mu0.adjusted[, i-burnin] = objmu.gp$y0[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
-        mu1.adjusted[, i-burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
-        mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
-        tau.adjusted[, i-burnin] = tau1.adjusted[, i-burnin] - tau0.adjusted[, i-burnin]
+        mu.adjusted[, i - burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        mu.adjusted[, i - burnin] = mu.adjusted[, i - burnin] + objtau.gp$y1[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws),i]
+        # tau.adjusted[, i-burnin] = tau1.adjusted[, i-burnin] - tau0.adjusted[, i-burnin]
+        tau.adjusted[, i-burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws),i])
     }
 
-    obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted,
-                tau0.adjusted = tau0.adjusted, tau1.adjusted = tau1.adjusted,
-                mu1.adjusted = mu1.adjusted, mu0.adjusted = mu0.adjusted)
+    obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted)
 
-    # for (i in seq) {
-    #     mu.adjusted[, i - burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
-    #     tau.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws), i])
-    # }
-    # obj <- list(mu.adjusted = mu.adjusted, tau.adjusted = tau.adjusted)
-
-    return(obj)
 }
