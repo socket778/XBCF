@@ -2137,15 +2137,21 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             mat Kinv = pinv(cov.submat(0, 0, N - 1, N - 1));
             mu = k * Kinv * resid;
             Sig =  cov.submat(N, N, N + Ntest - 1, N + Ntest - 1) - k * Kinv * trans(k);
+            
         }else{
             // prior
             mu.zeros(Ntest, 1);
             Sig = cov.submat(0, 0, Ntest - 1, Ntest - 1);
         }
+        mat U;
+        vec S;
+        mat V;
+        svd(U, S, V, Sig);
+
         std::normal_distribution<double> normal_samp(0.0, 1.0);
         mat samp(Ntest, 1);
         for (size_t i = 0; i < Ntest; i++) samp(i, 0) = normal_samp(state->gen);
-        mat draws = mu + Sig * samp;
+        mat draws = mu + U * diagmat(sqrt(S)) * samp;
         for (size_t i = 0; i < Ntest; i++) yhats_test_xinfo[test_ind[i]] += draws(i, 0);
     }
 
@@ -2484,6 +2490,17 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
             mu1.zeros(Ntest, 1);
             Sig1 = cov1.submat(0, 0, Ntest - 1, Ntest - 1);
         }
+        mat U0;
+        vec S0;
+        mat V0;
+        svd(U0, S0, V0, Sig0);
+
+        mat U1;
+        vec S1;
+        mat V1;
+        svd(U1, S1, V1, Sig1);
+
+
        // theta + sig * (res - theta)
         std::normal_distribution<double> normal_samp(0.0, 1.0);
         mat samp0(Ntest, 1);
@@ -2492,8 +2509,8 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
             samp0(i, 0) = normal_samp(state->gen);
             samp1(i, 0) = normal_samp(state->gen);
         }
-        mat draws0 = mu0 + Sig0 * samp0;
-        mat draws1 = mu1 + Sig1 * samp1;
+        mat draws0 = mu0 + U0 * diagmat(sqrt(S0)) * samp0;
+        mat draws1 = mu1 + U1 * diagmat(sqrt(S1)) * samp1;
         // mu1 - mu0 - mean(mu1 - m0) + 
         for (size_t i = 0; i < Ntest; i++){
             y0_test_xinfo[test_ind[i]] += draws0(i, 0);
