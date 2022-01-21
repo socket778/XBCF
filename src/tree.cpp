@@ -2145,7 +2145,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
                                 std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
                                 matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
-                                const size_t &tree_ind, const double &theta, const double &tau)
+                                const size_t &tree_ind, const double &theta, const double &tau, const bool local_range)
 {
     // gaussian process prediction from root
     // cout << "predict_from_root_gp" << endl;
@@ -2212,7 +2212,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                 this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
                                             state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
-                                            tree_ind, theta, tau);
+                                            tree_ind, theta, tau, local_range);
                 return;
             }
             if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
@@ -2220,7 +2220,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                 this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
                                             state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
-                                            tree_ind, theta, tau);
+                                            tree_ind, theta, tau, local_range);
                 return;
             }
 
@@ -2246,12 +2246,14 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, tree_ind, theta, tau);
+                                    state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
+                                    tree_ind, theta, tau, local_range);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, tree_ind, theta, tau);
+                                    state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
+                                    tree_ind, theta, tau, local_range);
         // cout << "end rigth " << endl;
     }
     else {
@@ -2268,9 +2270,19 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
 
         // get X_range
         // cout << "getX_range" << endl;
+
         matrix<double> local_X_range;
         bool overlap{true};
-        get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, overlap);
+        if (local_range){
+            get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, overlap);
+        }
+        else{
+            ini_matrix(local_X_range, 2, p);
+            for (size_t i = 0; i < p; i++){
+                std::copy(X_range[i].begin(), X_range[i].end(), local_X_range[i].begin());
+            }
+        }
+        
         // cout << "Xrange = " << local_X_range << endl;
         
 

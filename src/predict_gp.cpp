@@ -110,7 +110,8 @@ void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_ta
             // assign predicted values to data_pointers
             trees_trt[sweeps][tree_ind].predict_from_2gp(Xorder_tau_std, x_struct_trt, x_struct_trt->X_counts, x_struct_trt->X_num_unique, 
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
-            state, pitrain, pitest, pirange, X_range, active_var, y0_test_xinfo[sweeps], y1_test_xinfo[sweeps], tree_ind, theta, tau);
+            state, pitrain, pitest, pirange, X_range, active_var, y0_test_xinfo[sweeps], y1_test_xinfo[sweeps], 
+            tree_ind, theta, tau, true);
             
             // // check residuals and theta value
             // bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, 0, state->p, Xorder_tau_std[0].size());
@@ -229,7 +230,8 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
             // assign predicted values to data_pointers
             trees_pr[sweeps][tree_ind].predict_from_2gp(Xorder_std, x_struct_pr, x_struct_pr->X_counts, x_struct_pr->X_num_unique, 
             Xtestorder_std, xtest_struct_pr, xtest_struct_pr->X_counts, xtest_struct_pr->X_num_unique,
-            state, pitrain, pitest, pirange, X_range, active_var, mu0_test_xinfo[sweeps], mu1_test_xinfo[sweeps], tree_ind, theta, tau);
+            state, pitrain, pitest, pirange, X_range, active_var, mu0_test_xinfo[sweeps], mu1_test_xinfo[sweeps], 
+            tree_ind, theta, tau, false);
             
             // // check residuals and theta value
             bn = trees_pr[sweeps][tree_ind].search_bottom_std(x_struct_pr->X_std, 0, state->p, Xorder_std[0].size());
