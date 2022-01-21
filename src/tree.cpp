@@ -2083,14 +2083,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                     X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
                 }
                 // flexible range scale per leaf node
-                // x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
+                x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
 
-                // range scale should based on overlap region
-                // x_range[j_count] = local_X_range[j_count][1] - local_X_range[j_count][0];
-                // // define length scale by test points in the node
-                x_range[j_count] = *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size() - 1]);
-                x_range[j_count] -= *(split_var_x_pointer + Xorder_std[j][0]); 
-                
                 split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
                 for (size_t i = 0; i < Ntest; i++){
                     X(i + N, j_count) = *(split_var_x_pointer + test_ind[i]);
@@ -2104,14 +2098,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }
         }
 
-        // double scale0, scale1;
-        // if (state->fl == 0){
-        //     scale0 = state->a;
-        //     scale1 = state->a;
-        // }else{
-        //     scale0 = state->b_vec[0];
-        //     scale1 = state->b_vec[1];
-        // }
+        double scale0, scale1;
+        if (state->fl == 0){
+            scale0 = state->a;
+            scale1 = state->a;
+        }else{
+            scale0 = state->b_vec[0];
+            scale1 = state->b_vec[1];
+        }
         mat resid(N, 1);
         for (size_t i = 0; i < N; i++){
             // resid(i, 0) = (state->residual[train_ind[i]]  - this->theta_vector[0]);
@@ -2126,8 +2120,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         get_rel_covariance(cov, X, x_range, theta, tau); 
         // Add diagonal term sigma^2 based on treated/control group
         for (size_t i = 0; i < N; i++){
-            cov(i, i) +=  state->z[train_ind[i]]*pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);//  / abs(scale0);
-            cov(i, i) += (1- state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]); // / abs(scale1);
+            cov(i, i) +=  state->z[train_ind[i]]*pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale0);
+            cov(i, i) += (1- state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale1);
         }
 
         mat mu(Ntest, 1);
@@ -2406,7 +2400,6 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                     X0(i, j_count) = *(split_var_x_pointer + train_ind0[i]);
                 }
                 
-                // x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
                 // define length scale by test points in the node
                 x_range[j_count] = *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size() - 1]);
                 x_range[j_count] -= *(split_var_x_pointer + Xorder_std[j][0]); 
@@ -2426,14 +2419,14 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         }
         // cout << "x_range = " << x_range << endl;
         
-        // double scale0, scale1;
-        // if (state->fl == 0){
-        //     scale0 = state->a;
-        //     scale1 = state->a;
-        // }else{
-        //     scale0 = state->b_vec[0];
-        //     scale1 = state->b_vec[1];
-        // }
+        double scale0, scale1;
+        if (state->fl == 0){
+            scale0 = state->a;
+            scale1 = state->a;
+        }else{
+            scale0 = state->b_vec[0];
+            scale1 = state->b_vec[1];
+        }
         mat resid0(N0, 1);
         mat resid1(N1, 1);
         for (size_t i = 0; i < N0; i++){
@@ -2442,12 +2435,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         for (size_t i = 0; i < N1; i++){
             resid1(i, 0) = state->residual[train_ind1[i]] - this->theta_vector[0];// * scale1; // * state->a;
         }
-        // // substract mean
-        // double resid_mean0 = accu(resid0) / N0;
-        // double resid_mean1 = accu(resid1) / N1;
-        // for (size_t i = 0; i < N0; i++) resid0(i, 0) -= resid_mean0;
-        // for (size_t i = 0; i < N1; i++) resid1(i, 0) -= resid_mean1;
-        
+
         mat cov0(N0 + Ntest, N0 + Ntest);
         mat cov1(N1 + Ntest, N1 + Ntest);
         get_rel_covariance(cov0, X0, x_range, theta, tau); 
@@ -2455,10 +2443,10 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
          // Add diagonal term sigma^2 based on treated/control group
 
         for (size_t i = 0; i < N0; i++){
-             cov0(i, i) +=  pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]);// / abs(scale0);
+             cov0(i, i) +=  pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale0);
         } 
         for (size_t i = 0; i < N1; i++){
-             cov1(i, i) += pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]); // / abs(scale1) ;
+             cov1(i, i) += pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1])  / abs(scale1) ;
         }
 
         // cout << "cov0 = "  << cov0 << endl;
