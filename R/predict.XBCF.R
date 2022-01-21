@@ -428,7 +428,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         tau1.adjusted[, i - burnin] = objtau.gp$y1[,i] * model$sdy * model$b1_draws[nrow(model$b1_draws), i]
         mu0.adjusted[, i-burnin] = objmu.gp$y0[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
         mu1.adjusted[, i-burnin] = objmu.gp$y1[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
-        mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i])
+        mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
         tau.adjusted[, i-burnin] = tau1.adjusted[, i-burnin] - tau0.adjusted[, i-burnin]
     }
 

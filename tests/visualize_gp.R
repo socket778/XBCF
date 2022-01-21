@@ -4,7 +4,7 @@ n = 500
 nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
 # tau = 5 + cos(0.5*x +1)
-tau = -0.1*x
+tau = 0.1*x
 bound = 5
 A = rbinom(n+nt, 1, 0*(x>bound) + 0.5*(abs(x)<=bound) + 1*(x< -bound))
 # A = rbinom(n+nt, 1, 0*(x< -5) + 0.5*(abs(x)<=5) + 1*(x>5))
@@ -13,7 +13,7 @@ y0 = cos(0.2*x)
 Ey = A*y1 + (1-A)*y0
 sig = 0.25*sd(Ey)
 y = Ey + sig*rnorm(n+nt)
-plot(x, y, col = A + 1, cex = 0.8)
+# plot(x, y, col = A + 1, cex = 0.8)
 
 # propensity score?
 # pihat = NULL
@@ -74,7 +74,20 @@ points(xtest, rowMeans(pred.gp$mu.adjusted) + rowMeans(pred.gp$tau.adjusted), co
 points(xtest, rowMeans(pred$mudraws) + rowMeans(pred$taudraws), col = 4, cex = 0.5)
 legend('topleft', cex = 0.5, pch = 1, col = c(1, 3, 4), legend = c('y1', 'gp','xbcf'))
 
-tau.adjusted = pred.gp$tau.adjusted + (pred.gp$mu0.adjusted - pred.gp$mu1.adjusted) / mean(xbcf.fit$a_draws) 
+par(mfrow=c(1,1))
+plot(xtest, y1[1:n], col = 2, cex = 0.5, ylim = range(y1, y0))
+points(xtest, y0[1:n], col = 1, cex = 0.5)
+points(xtest, rowMeans(pred$taudraws + pred$mudraws),cex = 0.5, col = 4)
+# points(xtest, rowMeans(pred$mudraws), cex = 0.5, col = 8)
+points(xtest, rowMeans(pred.gp$mu1.adjusted), col = 6, cex = 0.5)
+# points(xtest, rowMeans(pred.gp$mu0.adjusted), col = 7, cex = 0.5)
+# points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$mu0.adjusted - pred.gp$mu1.adjusted + pred.gp$tau.adjusted), cex = 0.5, col = 3)
+legend('topright', cex = 0.5, pch = 1, col = c(2, 1, 3, 4, 6, 7), 
+       legend = c('y1', 'y0', 'y1.gp', 'y1.xbcf', 'mu1.gp', 'mu0.gp'))
+
+
+
+tau.adjusted = pred.gp$tau.adjusted + (pred.gp$mu.adjusted - pred.gp$mu1.adjusted) / mean(xbcf.fit$a_draws) 
 adjust.upper = apply(tau.adjusted, 1, quantile, 0.975)
 adjust.lower = apply(tau.adjusted, 1, quantile, 0.025)
 par(mfrow=c(1,1))
@@ -84,16 +97,5 @@ points(xtest, rowMeans(pred.gp$tau.adjusted), col = 6, cex = 0.5)
 points(xtest, rowMeans(tau.adjusted), col = 7, cex = 0.5)
 points(xtest, adjust.upper, col = 3, cex = 0.5)
 points(xtest, adjust.lower, col = 3, cex = 0.5)
-legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 6, 5), 
-       legend = c('y1 - y0', 'tau.xbcf','tau1 - tau0', 'gp C.I'))
-
-plot(xtest, y1[1:n], col = 2, cex = 0.5, ylim = range(y1, y0))
-points(xtest, y0[1:n], col = 1, cex = 0.5)
-points(xtest, rowMeans(pred$taudraws + pred$mudraws),cex = 0.5, col = 4)
-# points(xtest, rowMeans(pred$mudraws), cex = 0.5, col = 8)
-points(xtest, rowMeans(pred.gp$mu1.adjusted), col = 6, cex = 0.5)
-points(xtest, rowMeans(pred.gp$mu0.adjusted), col = 7, cex = 0.5)
-# points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$mu0.adjusted - pred.gp$mu1.adjusted + pred.gp$tau.adjusted), cex = 0.5, col = 3)
-legend('topright', cex = 0.5, pch = 1, col = c(2, 1, 3, 4, 6, 7), 
-       legend = c('y1', 'y0', 'y1.gp', 'y1.xbcf', 'mu1.gp', 'mu0.gp'))
-
+legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 6, 7, 3), 
+       legend = c('y1 - y0', 'tau.xbcf','tau1 - tau0', 'tau.gp+(mu-mu.gp)/a', 'gp C.I'))
