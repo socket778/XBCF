@@ -4,7 +4,7 @@ n = 500
 nt = 200
 x = as.matrix(rnorm(n+nt, 0, 5), n+nt,1)
 # tau = 5 + cos(0.5*x +1)
-tau = -0.1*x
+tau = -0.1*x #sin(0.2*x)
 bound = 5
 A = rbinom(n+nt, 1, 0*(x>bound) + 0.5*(abs(x)<=bound) + 1*(x< -bound))
 # A = rbinom(n+nt, 1, 0*(x< -5) + 0.5*(abs(x)<=5) + 1*(x>5))
@@ -97,5 +97,21 @@ points(xtest, rowMeans(pred$taudraws), col = 4, cex = 0.5)
 points(xtest, rowMeans(tau.adjusted), col = 7, cex = 0.5)
 points(xtest, adjust.upper, col = 3, cex = 0.5)
 points(xtest, adjust.lower, col = 3, cex = 0.5)
+abline(v = -5, col = 4)
+abline(v = 5, col = 4)
 legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 7, 3), 
        legend = c('y1 - y0', 'tau.xbcf','tau.gp', 'gp C.I'))
+
+
+par(mfrow=c(1, 1))
+plot(xtest, y[1:n], col = ztest + 1, cex = 0.5, ylab = 'Observed outcomes')
+points(xtest[order(xtest)], y1[1:n][order(xtest)], col = 2, cex = 0.2)
+points(xtest[order(xtest)], y0[1:n][order(xtest)], col = 1, cex = 0.2)
+points(xtest, rowMeans(pred.gp$mu.adjusted), col = 6, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$tau.adjusted), col = 7, cex = 0.5)
+abline(v = -5, col = 4)
+abline(v = 5, col = 4)
+legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 6, 7, 3), 
+       legend = c('Treated', 'Control', 'Pred Treated', 'Pred Control', '95% C.I'))
+
+
