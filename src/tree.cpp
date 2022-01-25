@@ -2027,6 +2027,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }
 
             // get training data from overlap area
+            std::vector<size_t> train_ind_cand;
             bool in_range;
             for (size_t i = 0; i < N; i++){
                 in_range = true;
@@ -2039,10 +2040,16 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                     }
                 }
                 if (in_range){
-                    train_ind.push_back(Xorder_std[0][i]);
+                    train_ind_cand.push_back(Xorder_std[0][i]);
                 }
             }
-            N = train_ind.size();
+            if (train_ind_cand.size() > 200) {
+                N = 200;
+            }else{
+                N = train_ind_cand.size();
+            }
+            train_ind.resize(N);
+            std::sample(train_ind_cand.begin(), train_ind_cand.end(), train_ind.begin(), N, state->gen);
 
         }else{
             // sample test ind with prior
@@ -2328,6 +2335,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
             }
 
             // get training data from overlap area
+            std::vector<size_t> train_ind_cand;
             bool in_range;
             for (size_t i = 0; i < N; i++){
                 in_range = true;
@@ -2340,9 +2348,16 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                     }
                 }
                 if (in_range){
-                    train_ind.push_back(Xorder_std[0][i]);
+                    train_ind_cand.push_back(Xorder_std[0][i]);
                 }
             }
+            if (train_ind_cand.size() > 200){
+                N = 200;
+            }else{
+                N = train_ind_cand.size();
+            }
+            train_ind.resize(N);
+            std::sample(train_ind_cand.begin(), train_ind_cand.end(), train_ind.begin(), N, state->gen);
             // cout << "X_range = " << local_X_range << endl; 
             // cout << "train_ind = " << train_ind << endl;
 
