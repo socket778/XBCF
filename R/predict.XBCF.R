@@ -376,10 +376,6 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
         A matrix with ', ncol(pihat_te), ' columns was provided instead.'))
     }
 
-    if (is.null(tau)){
-        cat("Set tau = var(y)/num_trees")
-        tau = var(y) / model$model_params$num_trees_trt
-    }
 
     xtrain_con <- cbind(model$pihat, xtrain_con)
     x_con <- cbind(pihat_te, x_con)
@@ -390,6 +386,12 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     } else {
         y = y / model$sdy
     }
+
+    if (is.null(tau)){
+        cat("Set tau = var(y)/num_trees")
+        tau = var(y) / model$model_params$num_trees_trt
+    }
+
     mutr = .Call(`_XBCF_xbcf_predict`, xtrain_con, model$model_list$tree_pnt_pr)
     # tautr = .Call(`_XBCF_xbcf_predict`, xtrain_mod, model$model_list$tree_pnt_trt)
     objmu = .Call(`_XBCF_xbcf_predict`, x_con, model$model_list$tree_pnt_pr)
@@ -398,7 +400,7 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     # objmu.gp = .Call(`_XBCF_predict_gp`, 0, y, z, xtrain_con, x_con, model$model_list$tree_pnt_pr, 
     #             tautr$predicted_values, model$sigma0_draws, model$sigma1_draws, 
     #             model$a_draws, model$b0_draws, model$b1_draws,
-    #             theta, tau, model$model_params$p_categorical_trt,
+    #             theta, tau, model$model_params$p_categorical_pr,
     #             verbose, parallel, set_random_seed, random_seed)
 
     objtau.gp = .Call(`_XBCF_predict_gp`, 1, y, z, xtrain_mod, x_mod, model$model_list$tree_pnt_trt, 
@@ -420,11 +422,11 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
     tau.adjusted <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
+
     for (i in seq) {
         mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
         mu.adjusted[, i - burnin] = mu.adjusted[, i - burnin] + objtau.gp$y1[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws),i]
-        # tau.adjusted[, i-burnin] = tau1.adjusted[, i-burnin] - tau0.adjusted[, i-burnin]
-        tau.adjusted[, i-burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws),i])
+       tau.adjusted[, i-burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws),i])
     }
 
     obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted)
