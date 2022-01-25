@@ -1863,8 +1863,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                                 std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                                 matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                                std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
-                                matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, const size_t &p_categorical, 
+                                std::unique_ptr<State> &state, matrix<double> &X_range, std::vector<bool> active_var,
+                                std::vector<double> &yhats_test_xinfo, 
                                 const size_t &tree_ind, const double &theta, const double &tau, const bool local_range)
 {
     // gaussian process prediction from root
@@ -1872,6 +1872,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
     size_t N = Xorder_std[0].size();
     size_t Ntest = Xtestorder_std[0].size();
     size_t p = active_var.size();
+    size_t p_categorical = state->p_categorical;
     size_t p_continuous = p - p_categorical;
 
     if (Ntest == 0){ // no need to split if Ntest = 0
@@ -1930,16 +1931,16 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 // all test data goes to the right node
                 this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, pitrain, pitest, pirange, X_range, active_var_right, yhats_test_xinfo, 
-                                            p_categorical, tree_ind, theta, tau, local_range);
+                                            state, X_range, active_var_right, yhats_test_xinfo, 
+                                            tree_ind, theta, tau, local_range);
                 return;
             }
             if (c >= *(xtest_struct->X_std + xtest_struct->n_y * v + Xtestorder_std[v][Ntest - 1])){
                 // all test data goes to the left node
                 this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, pitrain, pitest, pirange, X_range, active_var_left, yhats_test_xinfo, 
-                                            p_categorical, tree_ind, theta, tau, local_range);
+                                            state, X_range, active_var_left, yhats_test_xinfo, 
+                                            tree_ind, theta, tau, local_range);
                 return;
             }
 
@@ -1965,14 +1966,14 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_root_gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_left, yhats_test_xinfo, 
-                                    p_categorical, tree_ind, theta, tau, local_range);
+                                    state, X_range, active_var_left, yhats_test_xinfo, 
+                                    tree_ind, theta, tau, local_range);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_root_gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_right, yhats_test_xinfo, 
-                                    p_categorical, tree_ind, theta, tau, local_range);
+                                    state, X_range, active_var_right, yhats_test_xinfo, 
+                                    tree_ind, theta, tau, local_range);
         // cout << "end rigth " << endl;
     }
     else {
@@ -2160,8 +2161,8 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                                 std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                                 matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                                std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
-                                matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
+                                std::unique_ptr<State> &state, matrix<double> &X_range, std::vector<bool> active_var, 
+                                std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
                                 const size_t &tree_ind, const double &theta, const double &tau, const bool local_range)
 {
     // gaussian process prediction from root
@@ -2228,7 +2229,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                 // all test data goes to the right node
                 this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
+                                            state, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
                                             tree_ind, theta, tau, local_range);
                 return;
             }
@@ -2236,7 +2237,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
                 // all test data goes to the left node
                 this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                             Xtestorder_std, xtest_struct, Xtest_counts, Xtest_num_unique, 
-                                            state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
+                                            state, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
                                             tree_ind, theta, tau, local_range);
                 return;
             }
@@ -2263,13 +2264,13 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         // cout << "left, N = " << Xorder_left_std[0].size() << endl;
         this->l->predict_from_2gp(Xorder_left_std, x_struct, X_counts_left, X_num_unique_left, 
                                     Xtestorder_left_std, xtest_struct, Xtest_counts_left, Xtest_num_unique_left, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
+                                    state, X_range, active_var_left, y0_test_xinfo, y1_test_xinfo, 
                                     tree_ind, theta, tau, local_range);
         // cout << "end left" << endl;
         // cout << "right, N = " << Xorder_right_std[0].size() << endl;
         this->r->predict_from_2gp(Xorder_right_std, x_struct, X_counts_right, X_num_unique_right, 
                                     Xtestorder_right_std, xtest_struct, Xtest_counts_right, Xtest_num_unique_right, 
-                                    state, pitrain, pitest, pirange, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
+                                    state, X_range, active_var_right, y0_test_xinfo, y1_test_xinfo, 
                                     tree_ind, theta, tau, local_range);
         // cout << "end rigth " << endl;
     }

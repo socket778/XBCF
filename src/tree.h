@@ -157,16 +157,15 @@ public:
 
     void predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                             matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                            std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest,  std::vector<double> &pirange,
-                            matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, 
-                            const size_t &p_categorical, const size_t &tree_ind, const double &theta, const double &tau, const bool local_range);
+                            std::unique_ptr<State> &state, matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &yhats_test_xinfo, 
+                            const size_t &tree_ind, const double &theta, const double &tau, const bool local_range);
     
     void predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct> &x_struct, 
                                 std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, 
                                 matrix<size_t> &Xtestorder_std, std::unique_ptr<X_struct> &xtest_struct, 
                                 std::vector<size_t> &Xtest_counts, std::vector<size_t> &Xtest_num_unique, 
-                                std::unique_ptr<State> &state, std::vector<double> &pitrain, std::vector<double> &pitest, std::vector<double> &pirange,
-                                matrix<double> &X_range, std::vector<bool> active_var, std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
+                                std::unique_ptr<State> &state, matrix<double> &X_range, std::vector<bool> active_var, 
+                                std::vector<double> &y0_test_xinfo, std::vector<double> &y1_test_xinfo, 
                                 const size_t &tree_ind, const double &theta, const double &tau, const bool local_range);
 
     tree_p bn(double *x, matrix<double> &xi); //find Bottom Node, original BART version

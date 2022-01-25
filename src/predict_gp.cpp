@@ -22,9 +22,6 @@ void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_ta
                     matrix<double> &mu_fit_std,
                     matrix<double> &y0_test_xinfo,
                     matrix<double> &y1_test_xinfo,
-                    std::vector<double> &pitrain,
-                    std::vector<double> &pitest, 
-                    std::vector<double> &pirange, 
                     matrix<double>& X_range, 
                     const double &theta, const double &tau
                     )
@@ -110,12 +107,11 @@ void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_ta
             // assign predicted values to data_pointers
             // trees_trt[sweeps][tree_ind].predict_from_2gp(Xorder_tau_std, x_struct_trt, x_struct_trt->X_counts, x_struct_trt->X_num_unique, 
             // Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
-            // state, pitrain, pitest, pirange, X_range, active_var, y0_test_xinfo[sweeps], y1_test_xinfo[sweeps], 
+            // state, X_range, active_var, y0_test_xinfo[sweeps], y1_test_xinfo[sweeps], 
             // tree_ind, theta, tau, true);
             trees_trt[sweeps][tree_ind].predict_from_root_gp(Xorder_tau_std, x_struct_trt, x_struct_trt->X_counts, x_struct_trt->X_num_unique, 
             Xtestorder_tau_std, xtest_struct_trt, xtest_struct_trt->X_counts, xtest_struct_trt->X_num_unique,
-            state, pitrain, pitest, pirange, X_range, active_var,  y1_test_xinfo[sweeps], state->p_categorical,
-            tree_ind, theta, tau, true);
+            state, X_range, active_var,  y1_test_xinfo[sweeps], tree_ind, theta, tau, true);
             
             // // check residuals and theta value
             // bn = trees_trt[sweeps][tree_ind].search_bottom_std(x_struct_trt->X_std, 0, state->p, Xorder_tau_std[0].size());
@@ -167,9 +163,6 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
                     matrix<double> &tau_fit_std,
                     matrix<double> &mu0_test_xinfo,
                     matrix<double> &mu1_test_xinfo,
-                    std::vector<double> &pitrain,
-                    std::vector<double> &pitest, 
-                    std::vector<double> &pirange, 
                     matrix<double>& X_range, 
                     const double &theta, const double &tau
                     )
@@ -234,12 +227,11 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
             // assign predicted values to data_pointers
             trees_pr[sweeps][tree_ind].predict_from_root_gp(Xorder_std, x_struct_pr, x_struct_pr->X_counts, x_struct_pr->X_num_unique, 
             Xtestorder_std, xtest_struct_pr, xtest_struct_pr->X_counts, xtest_struct_pr->X_num_unique,
-            state, pitrain, pitest, pirange, X_range, active_var, mu1_test_xinfo[sweeps], state->p_categorical, 
-            tree_ind, theta, tau, false);
+            state, X_range, active_var, mu1_test_xinfo[sweeps], tree_ind, theta, tau, false);
 
             // trees_pr[sweeps][tree_ind].predict_from_2gp(Xorder_std, x_struct_pr, x_struct_pr->X_counts, x_struct_pr->X_num_unique, 
             // Xtestorder_std, xtest_struct_pr, xtest_struct_pr->X_counts, xtest_struct_pr->X_num_unique,
-            // state, pitrain, pitest, pirange, X_range, active_var, mu0_test_xinfo[sweeps], mu1_test_xinfo[sweeps], 
+            // state, X_range, active_var, mu0_test_xinfo[sweeps], mu1_test_xinfo[sweeps], 
             // tree_ind, theta, tau, false);
             
             // // check residuals and theta value
@@ -283,7 +275,7 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
 
 // [[Rcpp::export]]
 Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std::vector<std::vector<tree>>> tree_pnt, // a_draws, b_draws,
-                    mat partial_fit, mat pitrain, mat pitest, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
+                    mat partial_fit, mat sigma0_draws, mat sigma1_draws, mat a_draws, mat b0_draws, mat b1_draws,
                     double theta, double tau, size_t p_categorical = 0,
                     bool verbose = false, bool parallel = true, bool set_random_seed = false, size_t random_seed = 0)
 {
@@ -393,33 +385,11 @@ Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std:
             n_trt++;
     }
 
-    std::vector<double> pitr_std(N);
-    for (size_t i = 0; i < N; i++){
-        pitr_std[i] = pitrain(i, 0);
-    }
-    std::vector<double> pite_std(N_test);
-    for (size_t i = 0; i < N_test; i++){
-        pite_std[i] = pitest(i, 0);
-    }
-
     // Get X_range
     matrix<double> X_range;
     bool overlap;
     get_overlap(Xpointer, Xorder_std, z_std, X_range, overlap);
-    // get range for propenstiy scor,e
-    std::vector<double> pirange(2);// overlap range
-    // lower bound of pi range is defined by the smallest pi value in treatment group
-    // upper bound of pi range is defnied by the largest pi value in the control group
-    pirange[0] = 1; 
-    pirange[1] = 0;
-    for (size_t i = 0; i < N; i++){
-        if (z_std[i] == 1){
-            pirange[0] = pitr_std[i] < pirange[0] ? pitr_std[i] : pirange[0];
-        }
-        else{
-            pirange[1] = pitr_std[i] > pirange[1] ? pitr_std[i] : pirange[1];
-        }
-    }
+
     // State settings for the prognostic term
     std::unique_ptr<State> state(new xbcfState(Xpointer, Xorder_std, N, n_trt, p, p, num_trees_vec, p_categorical, p_categorical, 
                                 p_continuous, p_continuous, set_random_seed, random_seed, 0, 1, parallel, p, p, Xpointer, 
@@ -448,11 +418,11 @@ Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std:
     if (state->fl == 0){
         mcmc_loop_pr(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
                 a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, partial_fit_std, y0_test_xinfo, y1_test_xinfo, 
-                pitr_std, pite_std, pirange, X_range, theta, tau);
+                X_range, theta, tau);
     }else{
         mcmc_loop_trt(Xorder_std, Xtestorder_std, Xpointer, Xtestpointer, verbose, sigma0_draw_xinfo, sigma1_draw_xinfo, 
                 a_xinfo, b0_xinfo, b1_xinfo, *trees, state, x_struct, xtest_struct, partial_fit_std, y0_test_xinfo, y1_test_xinfo, 
-                pitr_std, pite_std, pirange, X_range, theta, tau);
+                X_range, theta, tau);
     }
 
     Rcpp::NumericMatrix y0_test(N_test, num_sweeps);

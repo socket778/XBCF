@@ -23,9 +23,6 @@ void mcmc_loop_trt(matrix<size_t> &Xorder_tau_std, matrix<size_t> &Xtestorder_ta
                     matrix<double> &mu_fit_std,
                     matrix<double> &y0_test_xinfo,
                     matrix<double> &y1_test_xinfo,
-                    std::vector<double> &pitrain,
-                    std::vector<double> &pitest, 
-                    std::vector<double> &pirange, 
                     matrix<double> &X_range, 
                     const double &theta, const double &tau
                     );
@@ -45,9 +42,6 @@ void mcmc_loop_pr(matrix<size_t> &Xorder_std, matrix<size_t> &Xtestorder_std,
                 matrix<double> &tau_fit_std,
                 matrix<double> &mu0_test_xinfo,
                 matrix<double> &mu1_test_xinfo,
-                std::vector<double> &pitrain,
-                std::vector<double> &pitest, 
-                std::vector<double> &pirange, 
                 matrix<double> &X_range, 
                 const double &theta, const double &tau
                 );
