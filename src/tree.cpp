@@ -554,6 +554,7 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
     this->N = N_Xorder;
 
     // tau is prior VARIANCE, do not take squares
+    bool no_split = false;
 
     if (update_theta)
     {
@@ -562,15 +563,15 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
 
     if (N_Xorder <= state->n_min)
     {
-        return;
+        // return;
+        no_split = true;
     }
 
     if (this->depth >= state->max_depth - 1)
     {
-        return;
+        // return;
+        no_split = true;
     }
-
-    bool no_split = false;
 
     std::vector<size_t> subset_vars(p);
 
@@ -621,16 +622,8 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
             }
         }
 
-        if (update_theta)
-        {
-            model->samplePars(state, this->suff_stat, this->theta_vector, this->prob_leaf);
-        }
-
         this->l = 0;
         this->r = 0;
-
-        // update leaf prob, for MH update useage
-        // this->loglike_node = model->likelihood_no_split(this->suff_stat, state);
 
         return;
     }
@@ -658,9 +651,12 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
     // If our current split is same as parent, exit
     if ((this->p) && (this->v == (this->p)->v) && (this->c == (this->p)->c))
     {
-        if (update_theta)
+       if (!update_split_prob)
         {
-            model->samplePars(state, this->suff_stat, this->theta_vector, this->prob_leaf);
+            for (size_t i = 0; i < N_Xorder; i++)
+            {
+                x_struct->data_pointers[tree_ind][Xorder_std[0][i]] = &this->theta_vector;
+            }
         }
 
         return;
