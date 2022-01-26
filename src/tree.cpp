@@ -978,6 +978,7 @@ void split_xorder_std_categorical(matrix<size_t> &Xorder_left_std, matrix<size_t
     return;
 }
 
+
 void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &split_var, size_t &split_point, const std::vector<size_t> &subset_vars, std::vector<size_t> &X_counts, std::vector<size_t> &X_num_unique, Model *model, std::unique_ptr<X_struct> &x_struct, std::unique_ptr<State> &state, tree *tree_pointer, bool update_split_prob)
 {
 
@@ -992,7 +993,7 @@ void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &spl
     // N - 1 has to be greater than 2 * Nmin
 
     size_t N = Xorder_std[0].size();
-    size_t p = Xorder_std.size();
+    // size_t p = Xorder_std.size();
     size_t ind;
     size_t N_Xorder = N;
     size_t total_categorical_split_candidates = 0;
@@ -1067,7 +1068,10 @@ void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &spl
         else
         {
             // do not use all continuous variables
-            std::fill(loglike.begin(), loglike.begin() + (N_Xorder - 1) * state->p_continuous - 1, 0.0);
+            if (state->p_continuous > 0)
+            {
+                std::fill(loglike.begin(), loglike.begin() + (N_Xorder - 1) * state->p_continuous - 1, 0.0);
+            }
         }
 
         std::discrete_distribution<> d(loglike.begin(), loglike.end());
@@ -1133,7 +1137,10 @@ void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &spl
             // count how many
             split_point = std::accumulate(X_counts.begin() + start, X_counts.begin() + ind + 1, 0);
             // minus one for correct index (start from 0)
-            split_point = split_point - 1;
+            if (split_point > 0)
+            {
+                split_point = split_point - 1;
+            }
             split_var = split_var + state->p_continuous;
         }
     }
@@ -1194,7 +1201,10 @@ void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &spl
             // count how many
             split_point = std::accumulate(X_counts.begin() + start, X_counts.begin() + ind + 1, 0);
             // minus one for correct index (start from 0)
-            split_point = split_point - 1;
+            if (split_point > 0)
+            {
+                split_point = split_point - 1;
+            }
             split_var = split_var + state->p_continuous;
         }
     }
