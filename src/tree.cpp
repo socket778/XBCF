@@ -2000,7 +2000,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         matrix<double> local_X_range;
         bool overlap{true};
         if (local_range){
-            get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, overlap);
+            get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, p_continuous, overlap);
         }
         else{
             ini_matrix(local_X_range, 2, p);
@@ -2042,7 +2042,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             bool in_range;
             for (size_t i = 0; i < N; i++){
                 in_range = true;
-                for (size_t j = 0; j < p; j++){
+                for (size_t j = 0; j < p_continuous; j++){
                     if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > local_X_range[j][1] ){
                         in_range = false;
                     }
@@ -2100,7 +2100,9 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 }
                 // flexible range scale per leaf node
                 x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
-
+                // use global range 
+                // x_range[j_count] = X_range[j][1] - X_range[j][0];
+                
                 split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
                 for (size_t i = 0; i < Ntest; i++){
                     X(i + N, j_count) = *(split_var_x_pointer + test_ind[i]);
@@ -2136,8 +2138,8 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         get_rel_covariance(cov, X, x_range, theta, tau); 
         // Add diagonal term sigma^2 based on treated/control group
         for (size_t i = 0; i < N; i++){
-            cov(i, i) +=  state->z[train_ind[i]]*pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale0);
-            cov(i, i) += (1- state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale1);
+            cov(i, i) +=  state->z[train_ind[i]]*pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale1);
+            cov(i, i) += (1- state->z[train_ind[i]]) * pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale0);
         }
 
         mat mu(Ntest, 1);
@@ -2304,7 +2306,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
         matrix<double> local_X_range;
         bool overlap{true};
         if (local_range){
-            get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, overlap);
+            get_overlap(x_struct->X_std, Xorder_std, state->z, local_X_range, p_continuous, overlap);
         }
         else{
             ini_matrix(local_X_range, 2, p);
@@ -2352,7 +2354,7 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
             bool in_range;
             for (size_t i = 0; i < N; i++){
                 in_range = true;
-                for (size_t j = 0; j < p; j++){
+                for (size_t j = 0; j < p_continuous; j++){
                     if ( *(x_struct->X_std + x_struct->n_y * j + Xorder_std[0][i]) > local_X_range[j][1] ){
                         in_range = false;
                     }

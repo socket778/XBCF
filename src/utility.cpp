@@ -289,10 +289,10 @@ void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> 
 }
 
 void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
-                matrix<double> &X_range, bool &overlap)
+                matrix<double> &X_range, size_t &p_continuous, bool &overlap)
 {
     size_t N = Xorder_std[0].size();
-    size_t p = Xorder_std.size();
+    size_t p = p_continuous;
     ini_matrix(X_range, 2, p);
     // cout << "N = " << N << ", p = " << p <<endl;
 

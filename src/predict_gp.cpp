@@ -388,7 +388,8 @@ Rcpp::List predict_gp(size_t fl, mat y, mat z, mat X, mat Xtest, Rcpp::XPtr<std:
     // Get X_range
     matrix<double> X_range;
     bool overlap;
-    get_overlap(Xpointer, Xorder_std, z_std, X_range, overlap);
+    get_overlap(Xpointer, Xorder_std, z_std, X_range, p_continuous, overlap);
+    cout << "X_range = " << X_range << endl;
 
     // State settings for the prognostic term
     std::unique_ptr<State> state(new xbcfState(Xpointer, Xorder_std, N, n_trt, p, p, num_trees_vec, p_categorical, p_categorical, 
