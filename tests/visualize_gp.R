@@ -48,9 +48,11 @@ t1 = proc.time() - t1
 
 pred = predict.XBCF(xbcf.fit, xtest, xtest, pihat = NULL)
 
-sigmahat <- sqrt(xbcf.fit$sigma0_draws[,60]^2 + xbcf.fit$sigma1_draws[,60]^2)
-tauhats.pred = t(apply(xbcf.fit$tauhats.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
-tauhats.gp <- t(apply(pred.gp$tau.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
+# sigmahat <- sqrt(xbcf.fit$sigma0_draws[,60]^2 + xbcf.fit$sigma1_draws[,60]^2)
+# tauhats.pred = t(apply(xbcf.fit$tauhats.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
+# tauhats.gp <- t(apply(pred.gp$tau.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
+tauhats.pred <- xbcf.fit$tauhats.adjusted
+tauhats.gp <- pred.gp$tau.adjusted
 
 # true tau?
 cat('True ATE:, ', round(mean(taute), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
