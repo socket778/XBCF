@@ -2049,9 +2049,11 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             }else{
                 N = train_ind_cand.size();
             }
-            train_ind.resize(N);
-            std::sample(train_ind_cand.begin(), train_ind_cand.end(), train_ind.begin(), N, state->gen);
-
+            if (N > 0){
+                train_ind.resize(N);
+                std::sample(train_ind_cand.begin(), train_ind_cand.end(), train_ind.begin(), N, state->gen);
+            }
+            
         }else{
             // sample test ind with prior
             test_ind.resize(Ntest);

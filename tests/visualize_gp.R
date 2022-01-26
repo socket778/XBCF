@@ -47,56 +47,43 @@ pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtra
 t1 = proc.time() - t1
 
 pred = predict.XBCF(xbcf.fit, xtest, xtest, pihat = NULL)
-tauhats.pred <- rowMeans(pred$taudraws)
-tauhats.gp <- rowMeans(pred.gp$tau.adjusted)
+
+sigmahat <- sqrt(xbcf.fit$sigma0_draws[,60]^2 + xbcf.fit$sigma1_draws[,60]^2)
+tauhats.pred = t(apply(xbcf.fit$tauhats.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
+tauhats.gp <- t(apply(pred.gp$tau.adjusted, 1, function(x) rnorm(length(x), x, sigmahat)))
 
 # true tau?
 cat('True ATE:, ', round(mean(taute), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
     ', XBCF tau: ', round(mean(tauhats.pred), 3), '\n')
 
-gp.upper <- apply(pred.gp$tau.adjusted, 1, quantile, 0.975, na.rm = TRUE)
-gp.lower <- apply(pred.gp$tau.adjusted, 1, quantile, 0.025, na.rm = TRUE)
-xbcf.upper <- apply(pred$taudraws, 1, quantile, 0.975, na.rm = TRUE)
-xbcf.lower <- apply(pred$taudraws, 1, quantile, 0.025, na.rm = TRUE)
+gp.upper <- apply(tauhats.gp, 1, quantile, 0.975, na.rm = TRUE)
+gp.lower <- apply(tauhats.gp, 1, quantile, 0.025, na.rm = TRUE)
+xbcf.upper <- apply(tauhats.pred, 1, quantile, 0.975, na.rm = TRUE)
+xbcf.lower <- apply(tauhats.pred, 1, quantile, 0.025, na.rm = TRUE)
 
 # evaluate coverage
 cat('Coverage:', '\n')
 cat('GP = ', round(mean((gp.upper >= taute) & (gp.lower <= taute)), 3), '\n')
 cat('XBCF = ', round(mean((xbcf.upper >= taute) & (xbcf.lower <= taute)), 3), '\n')
 
-par(mfrow=c(1,2))
-plot(xtest, y0[1:n], col = 1, cex = 0.5, ylim = range(y))
-points(xtest, rowMeans(pred.gp$mu.adjusted) , col = 3, cex = 0.5)
-points(xtest, rowMeans(pred$mudraws), col = 4, cex = 0.5)
-
-plot(xtest, y1[1:n], col = 1, cex = 0.5, ylim = range(y))
-points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$tau.adjusted), col = 3, cex = 0.5)
-points(xtest, rowMeans(pred$mudraws) + rowMeans(pred$taudraws), col = 4, cex = 0.5)
-legend('topleft', cex = 0.5, pch = 1, col = c(1, 3, 4), legend = c('y1', 'gp','xbcf'))
-
 par(mfrow=c(1,1))
 plot(xtest, y1[1:n], col = 2, cex = 0.5, ylim = range(y1, y0))
 points(xtest, y0[1:n], col = 1, cex = 0.5)
 points(xtest, rowMeans(pred$mudraws), cex = 0.5, col = 4)
-points(xtest, rowMeans(pred$taudraws + pred$mudraws),cex = 0.5, col = 5)
+points(xtest, rowMeans(pred$taudraws + tauhats.gp),cex = 0.5, col = 5)
 points(xtest, rowMeans(pred.gp$mu.adjusted), cex = 0.5, col = 6)
-points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$tau.adjusted), cex = 0.5, col = 7)
+points(xtest, rowMeans(pred.gp$mu.adjusted +tauhats.gp), cex = 0.5, col = 7)
 legend('topright', cex = 0.5, pch = 1, col = c(2, 1, 4, 5, 6, 7), 
        legend = c('y1', 'y0', 'mu.xbcf', 'mu.xbcf+tau', 'mu.gp', 'mu.gp+tau.gp'))
 
 
-
-# tau.adjusted = pred.gp$tau.adjusted #+ (pred.gp$mu.adjusted - pred.gp$mu1.adjusted) / mean(xbcf.fit$a_draws)
-tau.adjusted = pred.gp$tau.adjusted #/ mean(xbcf.fit$b1_draws) * mean(xbcf.fit$b1_draws - xbcf.fit$b0_draws)
-adjust.upper = apply(tau.adjusted, 1, quantile, 0.975)
-adjust.lower = apply(tau.adjusted, 1, quantile, 0.025)
 par(mfrow=c(1,1))
-plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5, ylim = range(rowMeans(pred.gp$tau.adjusted), y1- y0))
-points(xtest, rowMeans(pred$taudraws), col = 4, cex = 0.5)
+plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5, ylim = range(rowMeans(tauhats.gp), y1- y0))
+points(xtest, rowMeans(tauhats.pred), col = 4, cex = 0.5)
 # points(xtest, rowMeans(pred.gp$tau.adjusted), col = 6, cex = 0.5)
-points(xtest, rowMeans(tau.adjusted), col = 7, cex = 0.5)
-points(xtest, adjust.upper, col = 3, cex = 0.5)
-points(xtest, adjust.lower, col = 3, cex = 0.5)
+points(xtest, rowMeans(tauhats.gp), col = 7, cex = 0.5)
+points(xtest, gp.upper, col = 3, cex = 0.5)
+points(xtest, gp.lower, col = 3, cex = 0.5)
 abline(v = -5, col = 4)
 abline(v = 5, col = 4)
 legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 7, 3), 
@@ -108,7 +95,7 @@ plot(xtest, y[1:n], col = ztest + 1, cex = 0.5, ylab = 'Observed outcomes')
 points(xtest[order(xtest)], y1[1:n][order(xtest)], col = 2, cex = 0.2)
 points(xtest[order(xtest)], y0[1:n][order(xtest)], col = 1, cex = 0.2)
 points(xtest, rowMeans(pred.gp$mu.adjusted), col = 6, cex = 0.5)
-points(xtest, rowMeans(pred.gp$mu.adjusted + pred.gp$tau.adjusted), col = 7, cex = 0.5)
+points(xtest, rowMeans(pred.gp$mu.adjusted + tauhats.gp), col = 7, cex = 0.5)
 abline(v = -5, col = 4)
 abline(v = 5, col = 4)
 legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 6, 7, 3), 
