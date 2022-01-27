@@ -2099,16 +2099,18 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                     X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
                 }
 
-                if (local_X_range[j][1] > local_X_range[j][0]){
-                    x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
-                }else{
-                    x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);                
-                }
+                // if (local_X_range[j][1] > local_X_range[j][0]){
+                //     x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
+                // }else{
+                //     x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);                
+                // }
 
                 // flexible range scale per leaf node
-                // x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
+                x_range[j_count] =  sqrt(*(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]));
                 // use global range 
                 // x_range[j_count] = X_range[j][1] - X_range[j][0];
+
+                // x_range[j_count] = 1;
                 
                 split_var_x_pointer = xtest_struct->X_std + xtest_struct->n_y * j;
                 for (size_t i = 0; i < Ntest; i++){

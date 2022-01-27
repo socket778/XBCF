@@ -40,9 +40,10 @@ xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain,
                 pihat = pihat_tr, pcat_con = 0,  pcat_mod = 0 ,
                 num_sweeps = num_sweeps,  burnin = burnin,
                 n_trees_mod = num_trees_trt, n_trees_con = num_trees_pr)
-tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt + xbcf.fit$model_params$num_trees_pr) 
+# tau_gp = diff(range(xbcf.fit$tauhats.adjusted))/ xbcf.fit$model_params$num_trees_trt
+tau_gp = mean(xbcf.fit$sigma1_draws)^2/ xbcf.fit$model_params$num_trees_trt
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
-                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 1, tau = tau_gp, verbose = FALSE)
+                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 0.2, tau = tau_gp, verbose = FALSE)
 # pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
 t1 = proc.time() - t1
 
@@ -78,20 +79,6 @@ points(xtest, rowMeans(pred.gp$mu.adjusted +tauhats.gp), cex = 0.5, col = 7)
 legend('topright', cex = 0.5, pch = 1, col = c(2, 1, 4, 5, 6, 7), 
        legend = c('y1', 'y0', 'mu.xbcf', 'mu.xbcf+tau', 'mu.gp', 'mu.gp+tau.gp'))
 
-
-par(mfrow=c(1,1))
-plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5, ylim = range(rowMeans(tauhats.gp), y1- y0))
-points(xtest, rowMeans(tauhats.pred), col = 4, cex = 0.5)
-# points(xtest, rowMeans(pred.gp$tau.adjusted), col = 6, cex = 0.5)
-points(xtest, rowMeans(tauhats.gp), col = 7, cex = 0.5)
-points(xtest, gp.upper, col = 3, cex = 0.5)
-points(xtest, gp.lower, col = 3, cex = 0.5)
-abline(v = -5, col = 4)
-abline(v = 5, col = 4)
-legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 7, 3), 
-       legend = c('y1 - y0', 'tau.xbcf','tau.gp', 'gp C.I'))
-
-
 par(mfrow=c(1, 1))
 plot(xtest, y[1:n], col = ztest + 1, cex = 0.5, ylab = 'Observed outcomes')
 points(xtest[order(xtest)], y1[1:n][order(xtest)], col = 2, cex = 0.2)
@@ -103,4 +90,18 @@ abline(v = 5, col = 4)
 legend('topright', cex = 0.5, pch = 1, col = c(1, 2, 6, 7, 3), 
        legend = c('Treated', 'Control', 'Pred Treated', 'Pred Control', '95% C.I'))
 
+
+
+
+par(mfrow=c(1,1))
+plot(xtest, y1[1:n] - y0[1:n], col = ztest + 1, cex = 0.5, ylim = range(rowMeans(tauhats.gp), gp.upper, gp.lower, y1- y0))
+points(xtest, rowMeans(tauhats.pred), col = 4, cex = 0.5)
+# points(xtest, rowMeans(pred.gp$tau.adjusted), col = 6, cex = 0.5)
+points(xtest, rowMeans(tauhats.gp), col = 7, cex = 0.5)
+points(xtest, gp.upper, col = 3, cex = 0.5)
+points(xtest, gp.lower, col = 3, cex = 0.5)
+abline(v = -5, col = 4)
+abline(v = 5, col = 4)
+legend('topleft', cex = 0.5, pch = 1, col = c(1, 4, 7, 3), 
+       legend = c('y1 - y0', 'tau.xbcf','tau.gp', 'gp C.I'))
 
