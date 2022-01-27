@@ -43,7 +43,7 @@ xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain,
 # tau_gp = diff(range(xbcf.fit$tauhats.adjusted))/ xbcf.fit$model_params$num_trees_trt
 tau_gp = mean(xbcf.fit$sigma1_draws)^2/ xbcf.fit$model_params$num_trees_trt
 pred.gp = predictGP(xbcf.fit, as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, xtest, xtest, 
-                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 0.2, tau = tau_gp, verbose = FALSE)
+                    pihat_tr = pihat_tr, pihat_te = pihat_tr, theta = 0.1, tau = tau_gp, verbose = FALSE)
 # pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
 t1 = proc.time() - t1
 
