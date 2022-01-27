@@ -1244,7 +1244,7 @@ void calculate_loglikelihood_continuous(std::vector<double> &loglike, const std:
 
                 for (size_t j = 0; j < N_Xorder - 1; j++)
                 {
-                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index, j, false, model, state->residual_std);
+                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index, j, false, model, state);
 
                     loglike[(N_Xorder - 1) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, j, true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, j, false, false, state);
 
@@ -1260,8 +1260,8 @@ void calculate_loglikelihood_continuous(std::vector<double> &loglike, const std:
         // otherwise, adaptive number of cutpoints
         // use Ncutpoints
 
-        std::vector<size_t> candidate_index2(state->n_cutpoints + 1);
-        seq_gen_std2(state->n_min, N - state->n_min, state->n_cutpoints, candidate_index2);
+        std::vector<size_t> candidate_index(state->n_cutpoints + 1);
+        seq_gen_std2(state->n_min, N - state->n_min, state->n_cutpoints, candidate_index);
         // size_t p_continuous = state->p_continuous;
 
         // set up parallel during burnin?
@@ -1278,9 +1278,9 @@ void calculate_loglikelihood_continuous(std::vector<double> &loglike, const std:
 
                 for (size_t j = 0; j < state->n_cutpoints; j++)
                 {
-                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index2, j, true, model, state->residual_std);
+                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index, j, false, model, state);
                     // move likelihood calculation to a new thread
-                    loglike[(state->n_cutpoints) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], false, false, state);
+                    loglike[(state->n_cutpoints) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index[j + 1], true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index[j + 1], false, false, state);
                     loglike_max = loglike_max > loglike[(state->n_cutpoints) * i + j] ? loglike_max : loglike[(state->n_cutpoints) * i + j];
                 }
             }
