@@ -2098,8 +2098,15 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 for (size_t i = 0; i < N; i++){
                     X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
                 }
+
+                if (local_X_range[j][1] > local_X_range[j][0]){
+                    x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
+                }else{
+                    x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);                
+                }
+
                 // flexible range scale per leaf node
-                x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
+                // x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);
                 // use global range 
                 // x_range[j_count] = X_range[j][1] - X_range[j][0];
                 
@@ -2469,10 +2476,10 @@ void tree::predict_from_2gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_struct
          // Add diagonal term sigma^2 based on treated/control group
 
         for (size_t i = 0; i < N0; i++){
-             cov0(i, i) +=  pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale0);
+             cov0(i, i) +=  pow(state->sigma_vec[0], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1]) / abs(scale1);
         } 
         for (size_t i = 0; i < N1; i++){
-             cov1(i, i) += pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1])  / abs(scale1) ;
+             cov1(i, i) += pow(state->sigma_vec[1], 2) / (state->num_trees_vec[0] + state->num_trees_vec[1])  / abs(scale0) ;
         }
 
         // cout << "cov0 = "  << cov0 << endl;
