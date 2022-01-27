@@ -1211,57 +1211,47 @@ void BART_likelihood_all(matrix<size_t> &Xorder_std, bool &no_split, size_t &spl
 
     return;
 }
-
 void calculate_loglikelihood_continuous(std::vector<double> &loglike, const std::vector<size_t> &subset_vars, size_t &N_Xorder, matrix<size_t> &Xorder_std, double &loglike_max, Model *model, std::unique_ptr<X_struct> &x_struct, std::unique_ptr<State> &state, tree *tree_pointer)
 {
 
     size_t N = N_Xorder;
-
-    std::vector<double> temp_suff_stat(model->dim_suffstat);
-    std::vector<double> temp_suff_stat2(model->dim_suffstat);
 
     if (N_Xorder <= state->n_cutpoints + 1 + 2 * state->n_min)
     {
         // if we only have a few data observations in current node
         // use all of them as cutpoint candidates
 
-        double n1tau;
-        double n2tau;
+        // double n1tau;
+        // double n2tau;
         // double Ntau = N_Xorder * model->tau;
 
         // to have a generalized function, have to pass an empty candidate_index object for this case
         // is there any smarter way to do it?
         std::vector<size_t> candidate_index(1);
 
-        for (auto &&i : subset_vars)
+        // set up parallel during burnin
+        //  state->p_continuous * state->nthread > 100 // this is approximately the cost to set up parallel for
+        // #pragma omp parallel for if(state->use_all & state->p_continuous * state->nthread > 120) schedule(dynamic, 1) default(none) shared(N_Xorder, state, subset_vars, Xorder_std, model, candidate_index, tree_pointer, loglike, loglike_max)
+        for (auto i : subset_vars)
         {
             if (i < state->p_continuous)
             {
                 std::vector<size_t> &xorder = Xorder_std[i];
 
                 // initialize sufficient statistics
+                std::vector<double> temp_suff_stat(model->dim_suffstat);
                 std::fill(temp_suff_stat.begin(), temp_suff_stat.end(), 0.0);
-
-                ////////////////////////////////////////////////////////////////
-                //
-                //  This part can be run in parallel, just like continuous case below, Ncutpoint case
-                //
-                //  If run in parallel, need to redefine model class for each thread
-                //
-                ////////////////////////////////////////////////////////////////
 
                 for (size_t j = 0; j < N_Xorder - 1; j++)
                 {
-                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index, j, false, model, state);
+                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index, j, false, model, state->residual_std);
 
                     loglike[(N_Xorder - 1) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, j, true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, j, false, false, state);
 
-                    if (loglike[(N_Xorder - 1) * i + j] > loglike_max)
-                    {
-                        loglike_max = loglike[(N_Xorder - 1) * i + j];
-                    }
+                    loglike_max = loglike_max > loglike[(N_Xorder - 1) * i + j] ? loglike_max : loglike[(N_Xorder - 1) * i + j];
                 }
             }
+            
         }
     }
     else
@@ -1272,51 +1262,29 @@ void calculate_loglikelihood_continuous(std::vector<double> &loglike, const std:
 
         std::vector<size_t> candidate_index2(state->n_cutpoints + 1);
         seq_gen_std2(state->n_min, N - state->n_min, state->n_cutpoints, candidate_index2);
+        // size_t p_continuous = state->p_continuous;
 
-        // double Ntau = N_Xorder * model->tau;
-
-        std::mutex llmax_mutex;
-
-        for (auto &&i : subset_vars)
+        // set up parallel during burnin?
+        // state->p_continuous * state->nthread > 100 // this is approximately the cost to set up parallel for
+        for (auto i : subset_vars)
         {
             if (i < state->p_continuous)
             {
 
-                // Lambda callback to perform the calculation
-                auto calcllc_i = [i, &loglike, &loglike_max, &Xorder_std, &state, &candidate_index2, &model, &llmax_mutex, N_Xorder, &tree_pointer]() {
-                    std::vector<size_t> &xorder = Xorder_std[i];
-                    double llmax = -INFINITY;
+                std::vector<size_t> &xorder = Xorder_std[i];
 
-                    std::vector<double> temp_suff_stat(model->dim_suffstat);
+                std::vector<double> temp_suff_stat(model->dim_suffstat);
+                std::fill(temp_suff_stat.begin(), temp_suff_stat.end(), 0.0);
 
-                    std::fill(temp_suff_stat.begin(), temp_suff_stat.end(), 0.0);
-
-                    for (size_t j = 0; j < state->n_cutpoints; j++)
-                    {
-
-                        calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index2, j, true, model, state);
-
-                        loglike[(state->n_cutpoints) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], false, false, state);
-
-                        if (loglike[(state->n_cutpoints) * i + j] > llmax)
-                        {
-                            llmax = loglike[(state->n_cutpoints) * i + j];
-                        }
-                    }
-                    llmax_mutex.lock();
-                    if (llmax > loglike_max)
-                        loglike_max = llmax;
-                    llmax_mutex.unlock();
-                };
-
-                if (thread_pool.is_active())
-                    thread_pool.add_task(calcllc_i);
-                else
-                    calcllc_i();
+                for (size_t j = 0; j < state->n_cutpoints; j++)
+                {
+                    calcSuffStat_continuous(temp_suff_stat, xorder, candidate_index2, j, true, model, state->residual_std);
+                    // move likelihood calculation to a new thread
+                    loglike[(state->n_cutpoints) * i + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, candidate_index2[j + 1], false, false, state);
+                    loglike_max = loglike_max > loglike[(state->n_cutpoints) * i + j] ? loglike_max : loglike[(state->n_cutpoints) * i + j];
+                }
             }
         }
-        if (thread_pool.is_active())
-            thread_pool.wait();
     }
 }
 
@@ -1326,26 +1294,25 @@ void calculate_loglikelihood_categorical(std::vector<double> &loglike, size_t &l
     // loglike_start is an index to offset
     // consider loglikelihood start from loglike_start
 
-    size_t start;
-    size_t end;
-    size_t end2;
-    double y_cumsum = 0.0;
-    size_t n1;
-    size_t n2;
-    size_t temp;
-    size_t N = N_Xorder;
+    // size_t N = N_Xorder;
+    // size_t effective_cutpoints = 0;
 
-    size_t effective_cutpoints = 0;
-
-    std::vector<double> temp_suff_stat(model->dim_suffstat);
-
-    for (auto &&i : subset_vars)
+    // #pragma omp parallel for
+    //schedule(dynamic, 1)
+    // #pragma omp parallel for if(state->use_all & state->p_categorical * state->nthread > 140) schedule(dynamic, 1) default(none) shared(loglike_start, x_struct, X_counts,X_num_unique,  state, subset_vars, Xorder_std, model, tree_pointer, loglike, loglike_max)
+    for (size_t var_i = 0; var_i < subset_vars.size(); var_i++)
     {
 
-        // COUT << "variable " << i << endl;
+        size_t i = subset_vars[var_i]; // get subset varaible
+
+        // size_t var_effective_cutpoints = 0;
+
         if ((i >= state->p_continuous) && (X_num_unique[i - state->p_continuous] > 1))
         {
-            // more than one unique values
+            std::vector<double> temp_suff_stat(model->dim_suffstat);
+            std::fill(temp_suff_stat.begin(), temp_suff_stat.end(), 0.0);
+            size_t start, end, end2, n1, temp;
+
             start = x_struct->variable_ind[i - state->p_continuous];
             end = x_struct->variable_ind[i + 1 - state->p_continuous] - 1; // minus one for indexing starting at 0
             end2 = end;
@@ -1358,18 +1325,6 @@ void calculate_loglikelihood_categorical(std::vector<double> &loglike, size_t &l
             }
             // move backward again, do not consider the last unique value as cutpoint
             end2 = end2 - 1;
-
-            y_cumsum = 0.0;
-            //model -> suff_stat_fill(0.0); // initialize sufficient statistics
-            std::fill(temp_suff_stat.begin(), temp_suff_stat.end(), 0.0);
-
-            ////////////////////////////////////////////////////////////////
-            //
-            //  This part can be run in parallel, just like continuous case
-            //
-            //  If run in parallel, need to redefine model class for each thread
-            //
-            ////////////////////////////////////////////////////////////////
 
             n1 = 0;
 
@@ -1386,19 +1341,17 @@ void calculate_loglikelihood_categorical(std::vector<double> &loglike, size_t &l
                     calcSuffStat_categorical(temp_suff_stat, Xorder_std[i], n1, temp, model, state);
 
                     n1 = n1 + X_counts[j];
-                    // n1tau = (double)n1 * model->tau;
-                    // n2tau = ntau - n1tau;
 
-                    // loglike[loglike_start + j] = model->likelihood(model->tau, n1tau, sigma2, y_sum, true) + model->likelihood(model->tau, n2tau, sigma2, y_sum, false);
+                    // #pragma omp task firstprivate(temp_suff_stat, j, n1) shared(loglike_start, state, tree_pointer, model, loglike, loglike_max)
+                    // {
                     loglike[loglike_start + j] = model->likelihood(temp_suff_stat, tree_pointer->suff_stat, n1 - 1, true, false, state) + model->likelihood(temp_suff_stat, tree_pointer->suff_stat, n1 - 1, false, false, state);
 
                     // count total number of cutpoint candidates
-                    effective_cutpoints++;
+                    // var_effective_cutpoints++; // need to be added in task shared
+                    // #pragma omp flush(var_effective_cutpoints);
 
-                    if (loglike[loglike_start + j] > loglike_max)
-                    {
-                        loglike_max = loglike[loglike_start + j];
-                    }
+                    loglike_max = loglike_max > loglike[loglike_start + j] ? loglike_max : loglike[loglike_start + j];
+                    // }
                 }
             }
         }
@@ -1407,10 +1360,27 @@ void calculate_loglikelihood_categorical(std::vector<double> &loglike, size_t &l
 
 void calculate_likelihood_no_split(std::vector<double> &loglike, size_t &N_Xorder, double &loglike_max, Model *model, std::unique_ptr<X_struct> &x_struct, size_t &total_categorical_split_candidates, std::unique_ptr<State> &state, tree *tree_pointer)
 {
+    size_t loglike_size = 0;
+    for (size_t i = 0; i < loglike.size(); i++)
+    {
+        if (loglike[i] > -INFINITY)
+        {
+            loglike_size += 1;
+        }
+    }
+    if (loglike_size > 0)
+    {
+        loglike[loglike.size() - 1] = model->likelihood(tree_pointer->suff_stat, tree_pointer->suff_stat, loglike.size() - 1, false, true, state) + log(pow(1.0 + tree_pointer->getdepth(), model->beta) / model->alpha - 1.0) + log((double)loglike_size) + log(model->getNoSplitPenality());
+        // !!Note loglike_size shouldn't get minus 1 when it count non zero of loglike.
+    }
+    else
+    {
+        loglike[loglike.size() - 1] = 1;
+    }
 
-    loglike[loglike.size() - 1] = model->likelihood(tree_pointer->suff_stat, tree_pointer->suff_stat, loglike.size() - 1, false, true, state) + log(pow(1.0 + tree_pointer->getdepth(), model->beta) / model->alpha - 1.0) + log((double)loglike.size() - 1.0) + log(model->getNoSplitPenality());
-  
-//cout << loglike << endl;
+    // loglike[loglike.size() - 1] = model->likelihood(tree_pointer->suff_stat, tree_pointer->suff_stat, loglike.size() - 1, false, true, state) + log(pow(1.0 + tree_pointer->getdepth(), model->beta) / model->alpha - 1.0) + log((double)loglike.size() - 1.0) + log(model->getNoSplitPenality());
+
+    //cout << loglike << endl;
     // then adjust according to number of variables and split points
 
     ////////////////////////////////////////////////////////////////
