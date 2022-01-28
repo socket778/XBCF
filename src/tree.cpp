@@ -648,8 +648,8 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
         split_point = split_point + 1;
     }
 
-    // If our current split is same as parent, exit
-    if ((this->p) && (this->v == (this->p)->v) && (this->c == (this->p)->c))
+    // If our current split is same as parent, exit OR if the split point is at the largest index
+    if (((this->p) && (this->v == (this->p)->v) && (this->c == (this->p)->c)) | (split_point + 1 == N_Xorder))
     {
        if (!update_split_prob)
         {
