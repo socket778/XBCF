@@ -301,58 +301,51 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     ini_matrix(X_range_trt, 2, p);
     ini_matrix(X_range_ctrl, 2, p);
 
-    // find the first and the last treated and control sample
-    bool treated, control;
-    size_t ind, idx;
+    // count number of samples in each group
+    size_t n_trt = 0;
+    size_t n_ctrl = 0;
+    for (size_t i = 0; i < N; i++){
+        if (z_std[Xorder_std[0][i]] == 1){
+            n_trt += 1;
+        }else{
+            n_ctrl += 1;
+        }
+    }
+
+    if ((n_trt <= 1) | (n_ctrl <= 1)) {
+        overlap = false;
+        for (size_t i = 0; i < p; i++){
+            X_range[i][0] = Xorder_std[i][0];
+            X_range[i][1] = X_range[i][0];
+        }
+        return;
+    }
+
+    // find the 2.5% quantile of treated and control sample
+    // size_t cnt_trt, cnt_ctrl;
+    size_t trt_low = n_trt * 0.025 + 1;
+    size_t trt_up = n_trt * 0.975 + 1;
+    size_t ctrl_low = n_ctrl * 0.025 + 1;
+    size_t ctrl_up = n_ctrl * 0.975 + 1;
+    size_t ind, idx, cnt_trt, cnt_ctrl;
     for (size_t j = 0; j < p; j++){
-        treated = false;
-        control = false;
+        cnt_trt = 0;
+        cnt_ctrl = 0;
         for(size_t i = 0; i < N; i++){
             idx = Xorder_std[j][i];
             if (z_std[idx] == 0){
-                control = true;
-                X_range_ctrl[j][0] = *(Xpointer + j * N + idx);
+                cnt_ctrl += 1;
+                if (cnt_ctrl == ctrl_low) X_range_ctrl[j][0] = *(Xpointer + j * N + idx);
+                if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
             } else{
-                X_range_trt[j][0] = *(Xpointer + j * N + idx);
-                treated = true;
+                cnt_trt += 1;
+                if (cnt_trt == trt_low) X_range_trt[j][0] = *(Xpointer + j * N + idx);
+                if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
             }
-            if (treated & control){
-                break;
-            }
-        }
-        // in case no treated or control
-        if (!treated){
-            X_range_ctrl[j][1] = *(Xpointer + j * N + Xorder_std[j][N-1]);
-            // cout << "no treated, control = " << control << ", range = " << X_range_ctrl << endl;
-            X_range_trt[j][1] = X_range_ctrl[j][0];
-            X_range_trt[j][0] = X_range_ctrl[j][1]; // fake range to make sure non-overlap
-            continue;
-        } 
-        if (!control){
-            // cout << "no control, treated = " << treated << ", range = " << X_range_trt << endl;
-            X_range_trt[j][1] = *(Xpointer + j * N + Xorder_std[j][N-1]);
-            X_range_ctrl[j][1] = X_range_trt[j][0];
-            X_range_ctrl[j][0] = X_range_trt[j][1]; // fake range to make sure non-overlap
-            continue;
-        }
-
-
-        treated = false;
-        control = false;
-        for(size_t i = 0; i < N; i++){
-            idx = Xorder_std[j][N - 1 - i];
-            if (z_std[idx] == 0){
-                control = true;
-                X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
-            } else{
-                X_range_trt[j][1] = *(Xpointer + j * N + idx);
-                treated = true;
-            }
-            if (treated & control){
-                break;
-            }
+            
         }
     }
+
     // cout << "X_range_trt = " << X_range_trt << endl;
     // cout << "X_range_ctrl = " << X_range_ctrl << endl;
 
