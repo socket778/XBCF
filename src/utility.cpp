@@ -336,14 +336,33 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
             if (z_std[idx] == 0){
                 cnt_ctrl += 1;
                 if (cnt_ctrl == ctrl_low) X_range_ctrl[j][0] = *(Xpointer + j * N + idx);
-                if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
+                // if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
             } else{
                 cnt_trt += 1;
                 if (cnt_trt == trt_low) X_range_trt[j][0] = *(Xpointer + j * N + idx);
+                // if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
+            }
+            if ((cnt_ctrl >= ctrl_low) & (cnt_trt >= trt_low)){
+                break;
+            }
+        }
+
+        cnt_trt = n_trt - 1;
+        cnt_ctrl = n_ctrl - 1;
+        for (size_t i = 0; i < N; i++){
+            idx = Xorder_std[j][N-1-i];
+            if (z_std[idx] == 0){
+                cnt_ctrl -= 1;
+                if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
+            } else{
+                cnt_trt -= 1;
                 if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
             }
-            
+            if ((cnt_ctrl <= ctrl_low) & (cnt_trt <= trt_low)){
+                break;
+            }
         }
+
     }
 
     // cout << "X_range_trt = " << X_range_trt << endl;
