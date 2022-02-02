@@ -358,7 +358,7 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
                 cnt_trt -= 1;
                 if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
             }
-            if ((cnt_ctrl <= ctrl_low) & (cnt_trt <= trt_low)){
+            if ((cnt_ctrl <= ctrl_up) & (cnt_trt <= trt_up)){
                 break;
             }
         }
