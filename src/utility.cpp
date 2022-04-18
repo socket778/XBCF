@@ -431,5 +431,5 @@ void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &X
     }else{
         N_overlap = 0;
     }
-    cout << "overlap = " << overlap << ", N = " << N_Xorder << ", N_overlap = " << N_overlap << ", range = " << local_X_range << endl;
+    // cout << "overlap = " << overlap << ", N = " << N_Xorder << ", N_overlap = " << N_overlap << ", range = " << local_X_range << endl;
 }
