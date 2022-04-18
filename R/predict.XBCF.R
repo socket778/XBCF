@@ -420,15 +420,22 @@ predictGP <- function(model, y, z, xtrain_con, xtrain_mod = xtrain_con, x_con, x
 
     mu.adjusted <- matrix(NA, nrow(x_con), sweeps - burnin)
     tau.adjusted <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    mu <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    tau.b0 <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    tau.b1 <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
 
     for (i in seq) {
         mu.adjusted[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
         mu.adjusted[, i - burnin] = mu.adjusted[, i - burnin] + objtau.gp$y1[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws),i]
-       tau.adjusted[, i-burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws),i])
+        tau.adjusted[, i-burnin] = objtau.gp$y1[,i] * model$sdy * (model$b1_draws[nrow(model$b1_draws), i] - model$b0_draws[nrow(model$b0_draws),i])
+        mu[, i - burnin] = objmu$predicted_values[,i] * model$sdy * (model$a_draws[nrow(model$a_draws), i]) + model$meany
+        tau.b0[, i-burnin] = objtau.gp$y1[,i] * model$sdy * model$b0_draws[nrow(model$b0_draws), i]
+        tau.b1[, i-burnin] = objtau.gp$y1[,i] * model$sdy * model$b1_draws[nrow(model$b1_draws), i]
     }
 
-    obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted)
+    # obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted)
+    obj <- list(mu.adjusted=mu.adjusted, tau.adjusted=tau.adjusted, mu = mu, tau.b0 = tau.b0, tau.b1 = tau.b1)
 
 }
