@@ -244,7 +244,7 @@ size_t count_non_zero(std::vector<double> &vec)
 }
 
 
-///// Is this N correct here??? It's not if the function is called in a leaf node
+///// !!! Note that N should be the total number of data, not the local level. This funciton needs to be updated.
 void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<std::vector<double>> &X_range)
 {
     size_t N = Xorder_std[0].size();
@@ -303,6 +303,13 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     std::vector<std::vector<double>> X_range_ctrl;
     ini_matrix(X_range_trt, 2, p);
     ini_matrix(X_range_ctrl, 2, p);
+    // initialize range
+    for (size_t j = 0; j < p_continuous; j++){
+        X_range_trt[j][0] = std::numeric_limits<double>::max();
+        X_range_trt[j][1] = -std::numeric_limits<double>::max();
+        X_range_ctrl[j][0] = std::numeric_limits<double>::max();
+        X_range_ctrl[j][1] = -std::numeric_limits<double>::max();
+    }
 
     // count number of samples in each group
     size_t n_trt = 0;
@@ -318,18 +325,18 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
     if ((n_trt <= 1) | (n_ctrl <= 1)) {
         overlap = false;
         for (size_t i = 0; i < p; i++){
-            X_range[i][0] = Xorder_std[i][0];
-            X_range[i][1] = X_range[i][0];
+            X_range[i][0] = std::numeric_limits<double>::max();
+            X_range[i][1] = -std::numeric_limits<double>::max();
         }
         return;
     }
 
     // find the 2.5% quantile of treated and control sample
     // size_t cnt_trt, cnt_ctrl;
-    size_t trt_low = n_trt * 0.025 + 1;
-    size_t trt_up = n_trt * 0.975 + 1;
-    size_t ctrl_low = n_ctrl * 0.025 + 1;
-    size_t ctrl_up = n_ctrl * 0.975 + 1;
+    size_t trt_low = (size_t) ceil((double)n_trt * 0.025);
+    size_t trt_up = (size_t) floor((double)n_trt * 0.975);
+    size_t ctrl_low = (size_t) ceil((double)n_ctrl * 0.025);
+    size_t ctrl_up = (size_t) floor((double)n_ctrl * 0.975);
     size_t ind, idx, cnt_trt, cnt_ctrl;
     for (size_t j = 0; j < p; j++){
         cnt_trt = 0;
@@ -419,9 +426,10 @@ void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &X
                 }
             }
             if (check_overlap) N_overlap += 1;
-            if (N_overlap >= n_min) break;
+            if (N_overlap > n_min) break;
         }
     }else{
         N_overlap = 0;
     }
+    cout << "overlap = " << overlap << ", N = " << N_Xorder << ", N_overlap = " << N_overlap << ", range = " << local_X_range << endl;
 }
