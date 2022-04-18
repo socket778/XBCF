@@ -158,4 +158,7 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
 
 void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double theta, double tau);
 
+void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
+                size_t &p_continuous, size_t &n_y, size_t &n_min, size_t &N_overlap);
+
 #endif

@@ -567,6 +567,17 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
         no_split = true;
     }
 
+
+    // if its a tau tree, make sure the overlap data exceeds n_min
+    if (state->fl == 1){
+        size_t N_overlap = 0;
+        count_overlap(x_struct->X_std, Xorder_std, state->z, state->p_continuous, state->n_y, state->n_min, N_overlap);
+        if (N_overlap < state->n_min){
+            no_split = true;
+            // cout << "Amount of overlap data less than " << state->n_min << endl;
+        }
+    }
+
     if (this->depth >= state->max_depth - 1)
     {
         // return;

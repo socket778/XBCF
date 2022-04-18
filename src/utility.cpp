@@ -244,6 +244,7 @@ size_t count_non_zero(std::vector<double> &vec)
 }
 
 
+///// Is this N correct here??? It's not if the function is called in a leaf node
 void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<std::vector<double>> &X_range)
 {
     size_t N = Xorder_std[0].size();
@@ -264,6 +265,7 @@ void get_X_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
 void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
                     std::vector<std::vector<double>> &X_range)
 {
+    size_t n_y = z_std.size();
     size_t N = Xorder_std[0].size();
     size_t p = Xorder_std.size();
     ini_matrix(X_range, 2, p);
@@ -272,14 +274,14 @@ void get_treated_range(const double *Xpointer, std::vector< std::vector<size_t> 
     {
         for (size_t i = 0; i < N; i++){
             if (z_std[Xorder_std[j][i]] == 1){
-                X_range[j][0] = *(Xpointer + j * N + Xorder_std[j][i]);
+                X_range[j][0] = *(Xpointer + j * n_y + Xorder_std[j][i]);
                 break;
             }
         }
         for (size_t i = N; i-->0;)
         {
             if (z_std[Xorder_std[j][i]] == 1){
-                X_range[j][1] = *(Xpointer + j * N + Xorder_std[j][i]);
+                X_range[j][1] = *(Xpointer + j * n_y + Xorder_std[j][i]);
                 break;
             }
         }
@@ -292,6 +294,7 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
                 matrix<double> &X_range, size_t &p_continuous, bool &overlap)
 {
     size_t N = Xorder_std[0].size();
+    size_t n_y = z_std.size();
     size_t p = p_continuous;
     ini_matrix(X_range, 2, p);
     // cout << "N = " << N << ", p = " << p <<endl;
@@ -335,12 +338,10 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
             idx = Xorder_std[j][i];
             if (z_std[idx] == 0){
                 cnt_ctrl += 1;
-                if (cnt_ctrl == ctrl_low) X_range_ctrl[j][0] = *(Xpointer + j * N + idx);
-                // if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
+                if (cnt_ctrl == ctrl_low) X_range_ctrl[j][0] = *(Xpointer + j * n_y + idx);
             } else{
                 cnt_trt += 1;
-                if (cnt_trt == trt_low) X_range_trt[j][0] = *(Xpointer + j * N + idx);
-                // if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
+                if (cnt_trt == trt_low) X_range_trt[j][0] = *(Xpointer + j * n_y + idx);
             }
             if ((cnt_ctrl >= ctrl_low) & (cnt_trt >= trt_low)){
                 break;
@@ -353,10 +354,10 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
             idx = Xorder_std[j][N-1-i];
             if (z_std[idx] == 0){
                 cnt_ctrl -= 1;
-                if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * N + idx);
+                if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * n_y + idx);
             } else{
                 cnt_trt -= 1;
-                if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * N + idx);
+                if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * n_y + idx);
             }
             if ((cnt_ctrl <= ctrl_up) & (cnt_trt <= trt_up)){
                 break;
@@ -398,3 +399,29 @@ void get_rel_covariance(mat &cov, mat &X, std::vector<double> X_range, double th
     return;  
 }
 
+void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xorder_std, std::vector<size_t> &z_std,
+                size_t &p_continuous, size_t &n_y, size_t &n_min, size_t &N_overlap)
+{
+    N_overlap = 0;
+    matrix<double> local_X_range;
+    size_t N_Xorder = Xorder_std[0].size();
+    bool overlap{true};
+    get_overlap(Xpointer, Xorder_std, z_std, local_X_range, p_continuous, overlap);
+    bool check_overlap;
+    if (overlap){
+        for (size_t i = 0; i < N_Xorder; i++){
+            // check every dimension
+            check_overlap = true;
+            for (size_t j = 0; j < p_continuous; j++){
+                if( (*(Xpointer + j * n_y + Xorder_std[0][i]) > local_X_range[j][1]) |  ( *(Xpointer + j * n_y + Xorder_std[0][i]) < local_X_range[j][0] ) ){
+                    check_overlap = false;
+                    break;
+                }
+            }
+            if (check_overlap) N_overlap += 1;
+            if (N_overlap >= n_min) break;
+        }
+    }else{
+        N_overlap = 0;
+    }
+}
