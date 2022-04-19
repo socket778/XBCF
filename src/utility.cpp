@@ -355,26 +355,24 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
             }
         }
 
-        cnt_trt = n_trt - 1;
-        cnt_ctrl = n_ctrl - 1;
+        cnt_trt = n_trt;
+        cnt_ctrl = n_ctrl;
         for (size_t i = 0; i < N; i++){
             idx = Xorder_std[j][N-1-i];
             if (z_std[idx] == 0){
-                cnt_ctrl -= 1;
                 if (cnt_ctrl == ctrl_up) X_range_ctrl[j][1] = *(Xpointer + j * n_y + idx);
+                cnt_ctrl -= 1;
             } else{
-                cnt_trt -= 1;
                 if (cnt_trt == trt_up) X_range_trt[j][1] = *(Xpointer + j * n_y + idx);
+                cnt_trt -= 1;
             }
-            if ((cnt_ctrl <= ctrl_up) & (cnt_trt <= trt_up)){
+            if ((cnt_ctrl < ctrl_up) & (cnt_trt < trt_up)){
                 break;
             }
         }
 
     }
 
-    // cout << "X_range_trt = " << X_range_trt << endl;
-    // cout << "X_range_ctrl = " << X_range_ctrl << endl;
 
     // Get overlap
     for (size_t i = 0; i < p; i++){
@@ -383,6 +381,13 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
         if (X_range[i][0] >= X_range[i][1]) overlap = false;
         // cout << "X_range = " << X_range[i] << ", overlap = " << overlap << endl;
     }
+
+    // if (!overlap){
+    //     cout << "ntrt = " << n_trt << ", low = " << trt_low << ", up = " << trt_up << endl; 
+    //     cout << "nctrl = " << n_ctrl << ", low = " << ctrl_low << ", up = " << ctrl_up << endl;
+    //     cout << "X_range_trt = " << X_range_trt << endl;
+    //     cout << "X_range_ctrl = " << X_range_ctrl << endl;
+    // }
 
     return;
 }
@@ -415,6 +420,8 @@ void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &X
     bool overlap{true};
     get_overlap(Xpointer, Xorder_std, z_std, local_X_range, p_continuous, overlap);
     bool check_overlap;
+    size_t N_trt = 0;
+    size_t N_ctrl = 0;
     if (overlap){
         for (size_t i = 0; i < N_Xorder; i++){
             // check every dimension
@@ -425,11 +432,17 @@ void count_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &X
                     break;
                 }
             }
-            if (check_overlap) N_overlap += 1;
-            if (N_overlap > n_min) break;
+            if (check_overlap){
+                if (z_std[Xorder_std[0][i]] == 0) {
+                    N_ctrl += 1;
+                }else {
+                    N_trt += 1;
+                }
+            } 
+        
+            if ((N_trt > n_min) & (N_ctrl > n_min)) break;
         }
-    }else{
-        N_overlap = 0;
+        N_overlap = N_trt < N_ctrl ? N_trt : N_ctrl;
     }
     // cout << "overlap = " << overlap << ", N = " << N_Xorder << ", N_overlap = " << N_overlap << ", range = " << local_X_range << endl;
 }

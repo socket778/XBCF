@@ -567,16 +567,15 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
         no_split = true;
     }
 
-
-    // if its a tau tree, make sure the overlap data exceeds n_min
-    if (state->fl == 1){
-        size_t N_overlap = 0;
-        count_overlap(x_struct->X_std, Xorder_std, state->z, state->p_continuous, state->n_y, state->n_min, N_overlap);
-        if (N_overlap <= state->n_min){
-            no_split = true;
-            // cout << "Amount of overlap data less than " << state->n_min << endl;
-        }
-    }
+    // // if its a tau tree, make sure the overlap data exceeds n_min
+    // if (state->fl == 1){
+    //     size_t N_overlap = 0;
+    //     count_overlap(x_struct->X_std, Xorder_std, state->z, state->p_continuous, state->n_y, state->n_min, N_overlap);
+    //     if (N_overlap <= state->n_min){
+    //         no_split = true;
+    //         // cout << "Amount of overlap data less than " << state->n_min << endl;
+    //     }
+    // }
 
     if (this->depth >= state->max_depth - 1)
     {
@@ -721,6 +720,24 @@ void tree::grow_from_root(std::unique_ptr<State> &state, matrix<size_t> &Xorder_
     {
         split_xorder_std_continuous(Xorder_left_std, Xorder_right_std, split_var, split_point, Xorder_std, model, x_struct, state, this);
     }
+
+    // // if the children do not have enough overlap data, stop the split..
+    // if (state->fl == 1){
+    //     size_t N_overlap_left = 0;
+    //     size_t N_overlap_right = 0;
+    //     count_overlap(x_struct->X_std, Xorder_left_std, state->z, state->p_continuous, state->n_y, state->n_min, N_overlap_left);
+    //     count_overlap(x_struct->X_std, Xorder_right_std, state->z, state->p_continuous, state->n_y, state->n_min, N_overlap_right);
+    //     if ((N_overlap_left <= state->n_min) | (N_overlap_right <= state->n_min)) {
+    //         cout << "reversing the split " << "N_overlap left = " << N_overlap_left << ", right = " << N_overlap_right << endl;
+    //         no_split = true;
+    //         // reverse the split
+    //         this->v = NULL;
+    //         this->c = NULL;
+    //         this->l = NULL;
+    //         this->r = NULL;
+    //         return;
+    //     }
+    // }
 
     this->l->grow_from_root(state, Xorder_left_std, X_counts_left, X_num_unique_left, model, x_struct, sweeps, tree_ind, update_theta, update_split_prob, grow_new_tree);
 
@@ -2043,6 +2060,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 }
             }
             p_active = std::accumulate(active_var_test.begin(), active_var_test.begin() + p_continuous, 0);
+            cout << "Ntest = " << Ntest << ", extrapolate " << test_ind.size() << ", overlap = " << local_X_range << endl;
             Ntest = test_ind.size();
             if (Ntest == 0){
                 return;
@@ -2080,7 +2098,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
             test_ind.resize(Ntest);
             std::copy(Xtestorder_std[0].begin(), Xtestorder_std[0].end(), test_ind.begin());
             N = 0;
-
+            // cout << "Ntest = " << Ntest << ", no overlap, extrapolate by prior" << endl;
             // p_active should be determined by which variable has no overlap
             for (size_t i = 0; i < p_continuous; i++){
                 if ((active_var[i]) & (local_X_range[i][1] <= local_X_range[i][0])) {
@@ -2094,14 +2112,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
         mat X(N + Ntest, p_active);
         std::vector<double> x_range(p_active);
         const double *split_var_x_pointer;
-        //  add ps
-        //  for (size_t i = 0; i < N; i++){
-        //     X(i, 0) = pitrain[train_ind[i]];
-        // }
-        // for (size_t i = 0; i < Ntest; i++){
-        //     X(i + N, 0) = pitest[test_ind[i]];
-        // }
-        // x_range[0] = pirange[1]- pirange[0];
+
         size_t j_count = 0;
         for (size_t j = 0; j < p_continuous; j++){
             if (active_var_test[j]) {
@@ -2110,10 +2121,16 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                     X(i, j_count) = *(split_var_x_pointer + train_ind[i]);
                 }
 
+                // if (local_X_range[j][1] > local_X_range[j][0]){
+                //     x_range[j_count] = sqrt(local_X_range[j][1] - local_X_range[j][0]);
+                // }else{
+                //     x_range[j_count] =  sqrt(*(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]));                
+                // }
+                
                 if (local_X_range[j][1] > local_X_range[j][0]){
-                    x_range[j_count] = sqrt(local_X_range[j][1] - local_X_range[j][0]);
+                    x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
                 }else{
-                    x_range[j_count] =  sqrt(*(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]));                
+                    x_range[j_count] =  *(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]);                
                 }
 
                 // flexible range scale per leaf node

@@ -187,6 +187,19 @@ double xbcfModel::likelihood(std::vector<double> &temp_suff_stat, std::vector<do
   }
   else
   {
+    // Stop splitting if n0, n1 < n_min, return -inf loglikelihood
+    if (state->fl == 1){
+      if (left_side){
+        if ((temp_suff_stat[2] < state->n_min) | (temp_suff_stat[3] < state->n_min)){
+          return -INFINITY;
+        }
+      }else{
+        if ((suff_stat_all[2] - temp_suff_stat[2] < state->n_min) | (suff_stat_all[3] - temp_suff_stat[3] < state->n_min)){
+          return -INFINITY;
+        }
+      }
+    }
+
     if (left_side)
     {
       denominator = 1 + (temp_suff_stat[2] / pow(s0, 2) + temp_suff_stat[3] / pow(s1, 2)) * tau;
