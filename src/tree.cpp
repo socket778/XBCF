@@ -2060,7 +2060,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 }
             }
             p_active = std::accumulate(active_var_test.begin(), active_var_test.begin() + p_continuous, 0);
-            cout << "Ntest = " << Ntest << ", extrapolate " << test_ind.size() << ", overlap = " << local_X_range << endl;
+            // cout << "Ntest = " << Ntest << ", extrapolate " << test_ind.size() << ", overlap = " << local_X_range << endl;
             Ntest = test_ind.size();
             if (Ntest == 0){
                 return;
@@ -2126,7 +2126,7 @@ void tree::predict_from_root_gp(matrix<size_t> &Xorder_std, std::unique_ptr<X_st
                 // }else{
                 //     x_range[j_count] =  sqrt(*(split_var_x_pointer + Xorder_std[j][Xorder_std[j].size()-1]) - *(split_var_x_pointer + Xorder_std[j][0]));                
                 // }
-                
+
                 if (local_X_range[j][1] > local_X_range[j][0]){
                     x_range[j_count] = local_X_range[j][1] - local_X_range[j][0];
                 }else{

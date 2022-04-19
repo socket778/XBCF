@@ -333,10 +333,11 @@ void get_overlap(const double *Xpointer, std::vector< std::vector<size_t> > &Xor
 
     // find the 2.5% quantile of treated and control sample
     // size_t cnt_trt, cnt_ctrl;
-    size_t trt_low = (size_t) ceil((double)n_trt * 0.025);
-    size_t trt_up = (size_t) floor((double)n_trt * 0.975);
-    size_t ctrl_low = (size_t) ceil((double)n_ctrl * 0.025);
-    size_t ctrl_up = (size_t) floor((double)n_ctrl * 0.975);
+    double alpha = 0.05;
+    size_t trt_low = (size_t) ceil((double)n_trt * alpha / 2);
+    size_t trt_up = (size_t) floor((double)n_trt * (1-alpha / 2));
+    size_t ctrl_low = (size_t) ceil((double)n_ctrl * alpha / 2);
+    size_t ctrl_up = (size_t) floor((double)n_ctrl * (1-alpha / 2));
     size_t ind, idx, cnt_trt, cnt_ctrl;
     for (size_t j = 0; j < p; j++){
         cnt_trt = 0;
