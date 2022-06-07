@@ -1,6 +1,5 @@
 # simple demonstration of XBCF with default parameters
 library(XBCF)
-library(dbarts)
 
 #### 1. DATA GENERATION PROCESS
 n = 5000 # number of observations
@@ -9,10 +8,11 @@ n = 5000 # number of observations
 
 # generate dcovariates
 x1 = rnorm(n)
-x2 = rbinom(n,1,0.2)
-x3 = sample(1:3,n,replace=TRUE,prob = c(0.1,0.6,0.3))
-x4 = rnorm(n)
-x5 = rbinom(n,1,0.7)
+x2 = rnorm(n)
+x3 = rbinom(n,1,0.2)
+x4 = rbinom(n,1,0.7)
+x5 = data.frame(x3 = factor(sample(1:3,n,replace=TRUE,prob = c(0.1,0.6,0.3))))
+x5 <- model.matrix(~ . + 0, data=x3, contrasts.arg = lapply(x3, contrasts, contrasts=FALSE))
 x = cbind(x1,x2,x3,x4,x5)
 
 # define treatment effects
@@ -40,9 +40,6 @@ pihat = pi
 
 # matrix prep
 x <- data.frame(x)
-x[,3] <- as.factor(x[,3])
-x <- makeModelMatrixFromDataFrame(data.frame(x))
-x <- cbind(x[,1],x[,6],x[,-c(1,6)])
 
 # add pihat to the prognostic term matrix
 x1 <- cbind(pihat,x)
@@ -52,7 +49,7 @@ x1 <- cbind(pihat,x)
 
 # run XBCF
 t1 = proc.time()
-xbcf.fit = XBCF(y, z, x1, x, pcat_con = 5,  pcat_mod = 5)
+xbcf.fit = XBCF(y, z, x1, x, pcat_mod = 5,  pcat_con = 5)
 t1 = proc.time() - t1
 
 # get treatment individual-level estimates
