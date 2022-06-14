@@ -49,7 +49,7 @@ y = Ey + sig*rnorm(n)
 p_cat <- 2
 
 ## run xbcf
-fit_xbcf = XBCF(y, z, x, x, pi, pcat_con = p_cat)
+fit_xbcf = XBCF(y, z, x, x, pi, pcat_con = p_cat, pcat_mod = p_cat)
 
 ## obtain the treatment effect estimates from the fit
 tauhats <- getTaus(fit_xbcf)

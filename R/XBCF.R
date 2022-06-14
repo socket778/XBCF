@@ -21,7 +21,22 @@
 #' @param alpha_mod Base parameter for tree prior on trees in treatment forest (default is 0.25).
 #' @param beta_mod Power parameter for tree prior on trees in treatment forest (default is 3).
 #' @param tau_mod Prior variance over the mean on on trees in treatment forest (default is 0.1*var(y)/n_trees_mod).
-#'
+#' @param burnin Number of burnin sweeps of forests for prediction.
+#' @param mtry_con Number of X variables to draw for each split in the prognostic forest (default is 0, use all variables).
+#' @param mtry_mod Number of X variables to draw for eac split in the treatment forest (default is 0, use all variables).
+#' @param kap_con Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 16).
+#' @param s_con Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 4).
+#' @param kap_mod Prior parameter for the inverse Gamma prior on residual variance in treatment forest (default is 16).
+#' @param s_mod Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 4).
+#' @param pr_scale Bool, if True, use half-cauchy prior. Default is FALSE.
+#' @param trt_scale Bool, if True, use half-normal prior. Default is FALSE.
+#' @param verbose Bool flag for printing fitting process on the screen or not.
+#' @param parallel Bool flag for fitting in parallel or not.
+#' @param random_seed Seed for random number generator.
+#' @param sample_weights_flag Bool flag for sampling variable importance or not.
+#' @param a_scaling Bool, if True, update a. 
+#' @param b_scaling Bool, if True, update b0 and b1.
+#' 
 #' @return A fit file, which contains the draws from the model as well as parameter draws at each sweep.
 #' @export
 

@@ -55,11 +55,17 @@ XBCF(
 
 \item{num_sweeps}{The total number of sweeps over data (default is 60).}
 
+\item{burnin}{Number of burnin sweeps of forests for prediction.}
+
 \item{max_depth}{The maximum possible depth of a tree.}
 
 \item{Nmin}{The minimum node size.}
 
 \item{num_cutpoints}{The number of adaptive cutpoints considered at each split for continuous variables (default is 100).}
+
+\item{mtry_con}{Number of X variables to draw for each split in the prognostic forest (default is 0, use all variables).}
+
+\item{mtry_mod}{Number of X variables to draw for eac split in the treatment forest (default is 0, use all variables).}
 
 \item{pcat_con}{The number of categorical inputs in the prognostic term input matrix x_con.}
 
@@ -73,6 +79,12 @@ XBCF(
 
 \item{tau_con}{Prior variance over the mean on on trees in prognostic forest (default is 0.6*var(y)/n_trees_con).}
 
+\item{kap_con}{Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 16).}
+
+\item{s_con}{Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 4).}
+
+\item{pr_scale}{Bool, if True, use half-cauchy prior. Default is FALSE.}
+
 \item{n_trees_mod}{The number of trees in the treatment forest (default is 10).}
 
 \item{alpha_mod}{Base parameter for tree prior on trees in treatment forest (default is 0.25).}
@@ -80,6 +92,24 @@ XBCF(
 \item{beta_mod}{Power parameter for tree prior on trees in treatment forest (default is 3).}
 
 \item{tau_mod}{Prior variance over the mean on on trees in treatment forest (default is 0.1*var(y)/n_trees_mod).}
+
+\item{kap_mod}{Prior parameter for the inverse Gamma prior on residual variance in treatment forest (default is 16).}
+
+\item{s_mod}{Prior parameter for the inverse Gamma prior on residual variance in prognostic forest (default is 4).}
+
+\item{trt_scale}{Bool, if True, use half-normal prior. Default is FALSE.}
+
+\item{verbose}{Bool flag for printing fitting process on the screen or not.}
+
+\item{parallel}{Bool flag for fitting in parallel or not.}
+
+\item{random_seed}{Seed for random number generator.}
+
+\item{sample_weights_flag}{Bool flag for sampling variable importance or not.}
+
+\item{a_scaling}{Bool, if True, update a.}
+
+\item{b_scaling}{Bool, if True, update b0 and b1.}
 
 \item{num_burnin}{The number of burn-in sweeps (default is 20).}
 }

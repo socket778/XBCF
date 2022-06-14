@@ -1,26 +1,25 @@
-\name{XBART-package}
-\alias{XBART-package}
+\name{XBCF-package}
+\alias{XBCF-package}
 \docType{package}
 \title{
-  XBART: Accelerated Bayesian Additive Regression Trees
+  XBCF: Accelerated Bayesian Causal Forests
 }
 \description{
-  A stochastic hill climbing algorithm for Bayesian additive regression trees model. 
+This package implements XBCF model for conditional average treatment effect estimation.
 }
 \details{
-  This section should provide a more detailed overview of how to use the
-  package, including the most important functions.
+This package implements the Accelerated Bayesian Causal Forests approach for conditional average treatment effect estimation. This approach builds on the methodology behind Bayesian Causal Forests outlined in Hahn et al. (2020) and incorporates several improvements to Bayesian Additive Regression Trees implemented by He et al. (2019).
 }
 \author{
-Jingyu He, Saar Yalov and P. Richard Hahn
+Nikolay Krantsevich, Jingyu He and P. Richard Hahn
 
-Maintainer: Jingyu He <jingyu.he@chicagobooth.edu>
+Maintainer: Nikolay Krantsevich <krantsevich@asu.edu> and Jingyu He <jingyuhe@cityu.edu.hk>
 }
 \references{
-  XBART: Accelerated Bayesian Additive Regression Trees, AISTATS 2019.
+Krantsevich, Nikolay, Jingyu He, and P. Richard Hahn. "Stochastic Tree Ensembles for Estimating Heterogeneous Effects." URL: https://math. la. asu. edu/~ prhahn/XBCF. pdf (2021).
 }
-\keyword{ package }
+\keyword{ XBCF }
 \seealso{
-  XBART
+  XBCF
 }
 

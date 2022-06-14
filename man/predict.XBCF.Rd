@@ -4,7 +4,7 @@
 \alias{predict.XBCF}
 \title{Get post-burnin draws from trained model}
 \usage{
-\method{predict}{XBCF}(model, x_con, x_mod = x_con, pihat = NULL, burnin = NULL)
+predict.XBCF(model, x_con, x_mod = x_con, pihat = NULL, burnin = NULL)
 }
 \arguments{
 \item{model}{A trained XBCF model.}
