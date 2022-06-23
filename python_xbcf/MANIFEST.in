@@ -4,3 +4,4 @@ include *.cpp
 include *.h
 include *.i
 include *.py
+include LICENSE.txt
