@@ -1,5 +1,4 @@
-
-#! /bin/bash
+#! /bin/bash -e
 PYTHON_BIN=python
 DIST_FLAG=false
 SWIG_FLAG=false
@@ -32,13 +31,13 @@ do
 done
 
 echo Building python
-if [[ ! $(command -v "$PYTHON_BIN") ]]
+if ! command -v "$PYTHON_BIN"
 then
   echo "error $PYTHON_BIN not found. Make sure PYTHON_BIN is properly defined"
   exit 1
 fi
 
-./remove.sh
+./remove.sh || true
 $PYTHON_BIN -m pip uninstall xbcf
 cp -r ../src .
 
