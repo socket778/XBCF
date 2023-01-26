@@ -1,61 +1,105 @@
+##########################################
+## XBCF-GP comparison demo
+##########################################
+# setwd('~/Dropbox (ASU)/xbart_gp/causal/')
+# setwd('~/coverage/demo/')
+n <- 500
+simnum<-100
+
+# exp set up --------------------------------------------------------------
+## run simulation ##
+# setwd(wd)
+library(dbarts)
+library(XBART)
 library(XBCF)
+# source('functions.R')
+set.seed(simnum)
 
-n = 500
-nt = 500
-A = rbinom((n+nt), 1, 0.5)
-# small non-overlap
-mu1 = 1; mu2 = 2; p = 0.5
-# substantial non-overlap
-mu1 = 1; m3 = 3; p = 0.6
 
-x1 = rnorm(n + nt, mean = A*mu1 + (1-A)*0, 1)
-x2 = rnorm(n + nt, mean = A*mu2 + (1-A)*2, 1)
-x3 = rbinom(n + nt, 1, p = A*p + (1-A)*0.4)
-x = cbind(x1, x2, x3)
-# model1 
-y1 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*1, 1)
-y0 = rnorm(n + nt, 1 - 2*x1 + x2 - 1.2*x3 + 2*0, 1)
-y = A*y1 + (1-A)*y0
-# model2
-t = 1; c = 0
-y1 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*t + exp(1.4-x2*t) + x2*x3 - 1.2*x3 - 2*x3*t + 2*t, 1)
-y0 = rnorm(n + nt, -3-2.5*x1 + 2*x1^2*c + exp(1.4-x2*c) + x2*x3 - 1.2*x3 - 2*x3*c + 2*c, 1)
-y = A*y1 + (1-A)*y0
-# propensity score?
-# pihat = NULL
+# DGP --------------------------------------------------------------------
+
+# a 1-dim dgp that has non-overlap area
+n = 1000
+x = seq(-10, 10, length.out=n)
+mu = sin(x)
+tau = 0.25*x
+pi = 0.08*x + 0.5
+pi[pi > 1] = 1
+pi[pi < 0] = 0
+# plot(x,pi)
+# pi = rep(0.5, n)
+# pi[(x<4.5)&(x>-4.5)] = 0
+# pi[(x>8)|(x< -8)]=0
+
+
+z = rbinom(n, 1, pi)
+f = mu + tau*z
+y = f + 0.2*sd(f)*rnorm(n)
+
+# overlap area
+v1 = max(x[which(pi==0)])
+v2 = min(x[which(pi==1)])
+
+
+# fitz = XBART.multinomial(y = z, num_class = 2, X = x, p_cateogrical = 0)
+# predz = predict(fitz, as.matrix(x))
+# ps = predz$prob
+
 sink("/dev/null")
-fitz = nnet::nnet(A ~.,data = x, size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
+fitz = nnet::nnet(z ~ .,data = cbind(z, x), size = 3,rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2)
 sink() # close the stream
-pihat = fitz$fitted.values
+ps = fitz$fitted.values
 
-ytrain = y[1:n]; ytest = y[(n+1):(n+nt)]
-ztrain = A[1:n]; ztest = A[(n+1):(n+nt)]
-pihat_tr = pihat[1:n]; pihat_te = pihat[(n+1):(n+nt)]
-xtrain = x[1:n,]; xtest = x[(n+1):(n+nt),]
+#######################
+## 1. XBCF ##
+#######################
+xbcf.fit = XBCF(y, z, as.matrix(x), as.matrix(x), n_trees_mod = 20, num_sweeps=100,
+                pihat = ps, pcat_con = 0,  pcat_mod = 0, Nmin = 20)
 
+ce_xbcf = list()
+xbcf.tau = xbcf.fit$tauhats.adjusted
+ce_xbcf$ite = rowMeans(xbcf.tau)
+ce_xbcf$itu = apply(xbcf.tau, 1, quantile, 0.975, na.rm = TRUE)
+ce_xbcf$itl = apply(xbcf.tau, 1, quantile, 0.025, na.rm = TRUE)
 
+#######################
+## 1. XBCF-GP ##
+#######################
+tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt)
+xbcf.gp = predictGP(xbcf.fit, y, z, as.matrix(x),as.matrix(x), as.matrix(x), as.matrix(x),
+                    pihat_tr = ps, pihat_te = ps, theta = 0.1, tau = tau_gp, verbose = FALSE)
+ce_xbcf_gp = list()
+xbcf.gp.tau <- xbcf.gp$tau.adjusted
+ce_xbcf_gp$ite = rowMeans(xbcf.gp.tau)
+ce_xbcf_gp$itu = apply(xbcf.gp.tau, 1, quantile, 0.975, na.rm = TRUE)
+ce_xbcf_gp$itl = apply(xbcf.gp.tau, 1, quantile, 0.025, na.rm = TRUE)
 
-# run XBCF
-t1 = proc.time()
-xbcf.fit = XBCF(as.matrix(ytrain), as.matrix(ztrain), xtrain, xtrain, pihat = pihat_tr, pcat_con = 1,  pcat_mod = 1)
-pred.gp = predictGP(xbcf.fit, xtest, xtest, xtrain, as.matrix(ytrain), as.matrix(ztrain), 
-                    tau = 1, pihat = pihat_te, verbose = FALSE)
-# pred = predict.XBCF(xbcf.fit, xt, xt, pihat = pihat)
-t1 = proc.time() - t1
+# Demo plot ---------------------------------------------------------------
+cex_size = 1.2
+lab_size = 2
+tick_size = 2
+line_size = 1.5
 
-pred = predict.XBCF(xbcf.fit, xtest, xtest, pihat = pihat_te)
-tauhats.pred <- rowMeans(pred$taudraws)
-tauhats.gp <- rowMeans(pred.gp$taudraws)
+# xbcf
+plot(x, tau, col = z + 1, ylim = range(tau, ce_xbcf$itu, ce_xbcf$itl),
+     ylab = 'Treatment Effect', xlab = '', cex.lab = lab_size, cex.axis = tick_size, cex = line_size, pch = 20)
+abline(v = v1, col = 1, lty = 3, cex = 2)
+abline(v = v2, col = 1, lty = 3, cex = 2)
+lines(x,ce_xbcf$ite, col = 4, lwd=2, cex = line_size)
+lines(x,ce_xbcf$itu, col = 3, lwd=2, cex = line_size)
+lines(x,ce_xbcf$itl, col = 3, lwd=2, cex = line_size)
+legend('topleft', legend = c('Treated', 'Control', 'XBCF', '95% CI'), col = c(2, 1, 4, 3),
+       lty = c(NA, NA, 1, 1), pch = c(20, 20, NA, NA), cex = cex_size, font_size)
 
-# true tau?
-tau = y1[(n+1):(n+nt)] - y0[(n+1):(n+nt)]
-cat('True ATE:, ', round(mean(tau), 3), ', GP tau: ', round(mean(tauhats.gp), 3), 
-    ', XBCF tau: ', round(mean(tauhats.pred), 3))
+# xbcf_gp
+plot(x, tau, col = z + 1, ylim = range(tau, ce_xbcf_gp$ite, ce_xbcf_gp$itl), 
+     ylab = 'Treatment Effect', xlab = '' , cex.lab = lab_size, cex.axis = tick_size, cex = line_size, pch = 20)
+abline(v = v1, col = 1, lty = 3, cex = 2)
+abline(v = v2, col = 1, lty = 3, cex = 2)
+lines(x,ce_xbcf_gp$ite , col = 4, lwd=2, cex = line_size)
+lines(x,ce_xbcf_gp$itu, col = 3, lwd=2, cex = line_size)
+lines(x,ce_xbcf_gp$itl, col = 3, lwd=2, cex = line_size)
+legend('topleft', legend = c('Treated', 'Control', 'XBCF-GP', '95% CI'), col = c(2, 1, 4, 3),
+       lty = c(NA, NA, 1, 1), pch = c(20, 20, NA, NA), cex = cex_size)
 
-
-plot(pihat_te, tauhats.gp, col = 2)
-points(pihat_te, tauhats.pred)
-
-plot(xtest[ztest==0,1], tauhats.gp[ztest==0])
-points(xtest[ztest==1,1], tauhats.gp[ztest==1], col = 2)
 
