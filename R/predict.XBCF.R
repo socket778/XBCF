@@ -97,9 +97,9 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
 
     obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
-    sweeps <- model$model_params$num_sweeps
+    sweeps <- model$model_params$n_sweeps
     if(is.null(burnin)) {
-        burnin <- model$model_params$burnin
+        burnin <- model$model_params$n_burnin
     }
 
     if(burnin >= sweeps){
@@ -110,7 +110,7 @@ predictTauDraws <- function(model, x_mod, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b[i,2] - model$b[i,1])
     }
 
     return(tauhat.draws)
@@ -141,18 +141,18 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
 
     sweeps <- model$model_params$num_sweeps
     if(is.null(burnin)) {
-        burnin <- model$model_params$burnin
+        burnin <- model$model_params$n_burnin
     }
 
     if(burnin >= sweeps) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    tauhat.draws <- matrix(NA, nrow(x_mod), sweeps - burnin)
+    tauhat.draws <- matrix(NA, nrow(x_mod), n_sweeps - n_burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
+        tauhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b[i,2] - model$b[i,1])
     }
 
     tauhats <- rowMeans(tauhat.draws)

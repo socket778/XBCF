@@ -497,6 +497,22 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
     return Rcpp::List::create(
         Rcpp::Named("tauhats") = tauhats,
         Rcpp::Named("muhats") = muhats,
+        Rcpp::Named("sigma0") = sigma0_draws,
+        Rcpp::Named("sigma1") = sigma1_draws,
+        Rcpp::Named("a") = a_draws,
+        Rcpp::Named("b") = b_draws,
+        //Rcpp::Named("tau_con") = tau_con_draw,
+        //Rcpp::Named("tau_mod") = tau_mod_draw,
+        //Rcpp::Named("importance_prognostic") = split_count_sum_con,
+        //Rcpp::Named("importance_treatment") = split_count_sum_mod,
+        Rcpp::Named("model_list") = Rcpp::List::create(Rcpp::Named("y_mean") = y_mean, Rcpp::Named("p_con") = p_pr, Rcpp::Named("p_mod") = p_trt),
+        //Rcpp::Named("tree_json_mod") = tree_json_mod,
+        //Rcpp::Named("tree_json_con") = tree_json_con,
+        Rcpp::Named("tree_string_mod") = output_tree_trt,
+        Rcpp::Named("tree_string_con") = output_tree_pr
+        );
+/*        Rcpp::Named("tauhats") = tauhats,
+        Rcpp::Named("muhats") = muhats,
         Rcpp::Named("sigma0_draws") = sigma0_draws,
         Rcpp::Named("sigma1_draws") = sigma1_draws,
         Rcpp::Named("b_draws") = b_draws,
@@ -527,7 +543,6 @@ Rcpp::List XBCF_cpp(arma::mat y, arma::mat X, arma::mat X_tau, arma::mat z,     
                                                          Rcpp::Named("p_categorical_trt") = p_categorical_trt,
                                                          Rcpp::Named("num_trees_trt") = num_trees_trt),
         Rcpp::Named("input_var_count") = Rcpp::List::create(Rcpp::Named("x_con") = p_pr-1,
-                                                            Rcpp::Named("x_mod") = p_trt)
+                                                            Rcpp::Named("x_mod") = p_trt) */
 
-    );
 }

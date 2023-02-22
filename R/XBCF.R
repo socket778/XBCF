@@ -34,9 +34,9 @@
 #' @param parallel Bool flag for fitting in parallel or not.
 #' @param random_seed Seed for random number generator.
 #' @param sample_weights_flag Bool flag for sampling variable importance or not.
-#' @param a_scaling Bool, if True, update a. 
+#' @param a_scaling Bool, if True, update a.
 #' @param b_scaling Bool, if True, update b0 and b1.
-#' 
+#'
 #' @return A fit file, which contains the draws from the model as well as parameter draws at each sweep.
 #' @export
 
@@ -211,20 +211,35 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
                          verbose, parallel, set_random_seed,
                          random_seed, sample_weights_flag,
                          a_scaling, b_scaling)
-    class(obj) = "XBCF"
 
     #obj$sdy_use = sdy_use
     obj$sdy = sdy
     obj$meany = meany
     obj$tauhats = obj$tauhats * sdy
     obj$muhats = obj$muhats * sdy
-
+    obj$tau_con <- matrix(tau_con, nrow = num_sweeps, ncol = 1)
+    obj$tau_mod <- matrix(tau_mod, nrow = num_sweeps, ncol = 1)
     obj$tauhats.adjusted <- matrix(NA, length(y), num_sweeps-burnin)
     obj$muhats.adjusted <- matrix(NA, length(y), num_sweeps-burnin)
     seq <- (burnin+1):num_sweeps
     for (i in seq) {
-        obj$tauhats.adjusted[, i - burnin] = obj$tauhats[,i] * (obj$b_draws[i,2] - obj$b_draws[i,1])
-        obj$muhats.adjusted[, i - burnin] = obj$muhats[,i] * (obj$a_draws[i]) + meany
+        obj$tauhats.adjusted[, i - burnin] = obj$tauhats[,i] * (obj$b[i,2] - obj$b[i,1])
+        obj$muhats.adjusted[, i - burnin] = obj$muhats[,i] * (obj$a[i]) + meany
     }
+
+    obj$meany <- meany
+    obj$sdy <- sdy
+
+    model_params <- list(n_sweeps = num_sweeps,
+                         n_burnin = burnin,
+                         n_trees_con = n_trees_con,
+                         n_trees_mod = n_trees_mod,
+                         tau_con = tau_con,
+                         tau_mod = tau_mod,
+                         pihat_status = "control")
+    obj$model_params <- model_params
+
+    class(obj) = "XBCFdiscrete"
+
     return(obj)
 }
