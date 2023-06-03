@@ -19,9 +19,9 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
         x_mod = as.matrix(x_mod)
     }
 
-    if(ncol(x_con) != model$input_var_count$x_con) {
+    if(ncol(x_con) != model$input_var_count$x_con - 1) {
         stop(paste0('Check dimensions of input matrices. The model was trained on
-        x_con with ', model$input_var_count$x_con,
+        x_con with ', model$input_var_count$x_con - 1,
         ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
     }
     if(ncol(x_mod) != model$input_var_count$x_mod) {
@@ -51,9 +51,9 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     obj1 = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
     obj2 = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
-    sweeps <- ncol(model$tauhats)
+    sweeps <- model$model_params$n_sweeps
     if(is.null(burnin)) {
-        burnin <- model$model_params$burnin
+        burnin <- model$model_params$n_burnin
     }
 
     if(burnin >= sweeps) {
@@ -65,8 +65,8 @@ predict.XBCF <- function(model, x_con, x_mod=x_con, pihat=NULL, burnin=NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        taus[, i - burnin] = obj2$predicted_values[,i] * model$sdy * (model$b_draws[i,2] - model$b_draws[i,1])
-        mus[, i - burnin] = obj1$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        taus[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$b[i,2] - model$b[i,1])
+        mus[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a[i]) + model$meany
     }
 
     obj <- list(mudraws=mus, taudraws=taus)
@@ -139,7 +139,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
 
     obj = .Call(`_XBCF_predict`, x_mod, model$model_list$tree_pnt_trt)
 
-    sweeps <- model$model_params$num_sweeps
+    sweeps <- model$model_params$n_sweeps
     if(is.null(burnin)) {
         burnin <- model$model_params$n_burnin
     }
@@ -148,7 +148,7 @@ predictTaus <- function(model, x_mod, burnin = NULL) {
         stop(paste0('burnin (',burnin,') cannot exceed or match the total number of sweeps (',sweeps,')'))
     }
 
-    tauhat.draws <- matrix(NA, nrow(x_mod), n_sweeps - n_burnin)
+    tauhat.draws <- matrix(NA, nrow(x_mod), sweeps - burnin)
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
@@ -176,9 +176,9 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
         x_con = as.matrix(x_con)
     }
 
-    if(ncol(x_con) != model$input_var_count$x_con) {
+    if(ncol(x_con) != model$input_var_count$x_con - 1) {
         stop(paste0('Check dimensions of input matrices. The model was trained on
-        x_con with ', model$input_var_count$x_con,
+        x_con with ', model$input_var_count$x_con - 1,
         ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
     }
 
@@ -203,9 +203,9 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
 
     obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
 
-    sweeps <- model$model_params$num_sweeps
+    sweeps <- model$model_params$n_sweeps
     if(is.null(burnin)) {
-        burnin <- model$model_params$burnin
+        burnin <- model$model_params$n_burnin
     }
 
     if(burnin >= sweeps){
@@ -216,7 +216,7 @@ predictMuDraws <- function(model, x_con, pihat=NULL, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a[i]) + model$meany
     }
 
     return(muhat.draws)
@@ -238,9 +238,9 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
         x_con = as.matrix(x_con)
     }
 
-    if(ncol(x_con) != model$input_var_count$x_con) {
+    if(ncol(x_con) != model$input_var_count$x_con - 1) {
         stop(paste0('Check dimensions of input matrices. The model was trained on
-        x_con with ', model$input_var_count$x_con,
+        x_con with ', model$input_var_count$x_con - 1,
         ' columns; trying to predict on x_con with ', ncol(x_con),' columns.'))
     }
 
@@ -265,9 +265,9 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
 
     obj = .Call(`_XBCF_predict`, x_con, model$model_list$tree_pnt_pr)
 
-    sweeps <- model$model_params$num_sweeps
+    sweeps <- model$model_params$n_sweeps
     if(is.null(burnin)) {
-        burnin <- model$model_params$burnin
+        burnin <- model$model_params$n_burnin
     }
 
     if(burnin >= sweeps) {
@@ -278,7 +278,7 @@ predictMus <- function(model, x_con, pihat = NULL, burnin = NULL) {
     seq <- (burnin+1):sweeps
 
     for (i in seq) {
-        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a_draws[i]) + model$meany
+        muhat.draws[, i - burnin] = obj$predicted_values[,i] * model$sdy * (model$a[i]) + model$meany
     }
 
     muhats <- rowMeans(muhat.draws)

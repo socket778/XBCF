@@ -5,8 +5,8 @@
 #' @return An array of treatment effect point estimates.
 #' @export
 getTaus <- function(fit) {
-    if(class(fit) != "XBCF")
-        stop("Can only get taus for an XBCF object.")
+    if(class(fit) != "XBCFdiscrete")
+        stop("Can only get taus for an XBCFdiscrete object.")
     else
         tauhats <- rowMeans(fit$tauhats.adjusted)
 
@@ -20,8 +20,8 @@ getTaus <- function(fit) {
 #' @return An array of prognostic effect point estimates.
 #' @export
 getMus <- function(fit) {
-    if(class(fit) != "XBCF")
-        stop("Can only get taus for an XBCF object.")
+    if(class(fit) != "XBCFdiscrete")
+        stop("Can only get taus for an XBCFdiscrete object.")
     else
         muhats <- rowMeans(fit$muhats.adjusted)
 

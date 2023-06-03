@@ -239,6 +239,9 @@ XBCF <- function(y, z, x_con, x_mod = x_con, pihat = NULL,
                          pihat_status = "control")
     obj$model_params <- model_params
 
+    obj$input_var_count$x_con <- ncol(x_con)
+    obj$input_var_count$x_mod <- ncol(x_mod)
+
     class(obj) = "XBCFdiscrete"
 
     return(obj)
