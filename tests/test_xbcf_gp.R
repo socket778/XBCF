@@ -3,7 +3,6 @@
 ##########################################
 # setwd('~/Dropbox (ASU)/xbart_gp/causal/')
 # setwd('~/coverage/demo/')
-n <- 500
 simnum<-100
 
 # exp set up --------------------------------------------------------------
@@ -19,7 +18,7 @@ set.seed(simnum)
 # DGP --------------------------------------------------------------------
 
 # a 1-dim dgp that has non-overlap area
-n = 1000
+n = 500
 x = seq(-10, 10, length.out=n)
 mu = sin(x)
 tau = 0.25*x
@@ -67,7 +66,7 @@ ce_xbcf$itl = apply(xbcf.tau, 1, quantile, 0.025, na.rm = TRUE)
 #######################
 tau_gp = mean(xbcf.fit$sigma1_draws)^2/ (xbcf.fit$model_params$num_trees_trt)
 xbcf.gp = predictGP(xbcf.fit, y, z, as.matrix(x),as.matrix(x), as.matrix(x), as.matrix(x),
-                    pihat_tr = ps, pihat_te = ps, theta = 0.1, tau = tau_gp, verbose = FALSE)
+                    pihat_tr = ps, pihat_te = ps, theta = sqrt(10), tau = tau_gp, verbose = FALSE)
 ce_xbcf_gp = list()
 xbcf.gp.tau <- xbcf.gp$tau.adjusted
 ce_xbcf_gp$ite = rowMeans(xbcf.gp.tau)
