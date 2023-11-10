@@ -1,0 +1,39 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+jobs:
+  build_python:
+    name: Build - Python ${{ matrix.python-version }} - ${{ matrix.os }}
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8"]
+        os: [ubuntu-latest]
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+      - name: Set up Conda env
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: false
+          environment-name: build_py
+          cache-env: true
+          channels: conda-forge
+          extra-specs: |
+            python=${{ matrix.python-version }}
+            swig
+            numpy
+      - name: Build
+        run: |
+          cd python_xbcf
+          ./build_py.sh
